@@ -29,11 +29,12 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	private int numExamplesToFetch;
 	private int examplesSoFar = 0;
 	private Random rng;
-	private final int numCharacters;
-	private final boolean alwaysStartAtNewLine;
+	//private final int numCharacters;
+	//private final boolean alwaysStartAtNewLine;
 	
 	public PhysioNet_ICU_Mortality_Iterator(String path, int miniBatchSize, int exampleSize, int numExamplesToFetch ) throws IOException {
-		this(path,Charset.defaultCharset(),miniBatchSize,exampleSize,numExamplesToFetch,getDefaultCharacterSet(), new Random(),true);
+	//	this(path,Charset.defaultCharset(),miniBatchSize,exampleSize,numExamplesToFetch,getDefaultCharacterSet(), new Random(),true);
+		//this.numCharacters = 0; // fix
 	}
 	
 	/**
@@ -48,8 +49,9 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	 *  of no new line characters, to avoid scanning entire file)
 	 * @throws IOException If text file cannot  be loaded
 	 */
-	public PhysioNet_ICU_Mortality_Iterator(String textFilePath, Charset textFileEncoding, int miniBatchSize, int exampleLength,
-			int numExamplesToFetch, char[] validCharacters, Random rng, boolean alwaysStartAtNewLine ) throws IOException {
+//	public PhysioNet_ICU_Mortality_Iterator(String textFilePath, Charset textFileEncoding, int miniBatchSize, int exampleLength,
+//			int numExamplesToFetch, char[] validCharacters, Random rng, boolean alwaysStartAtNewLine ) throws IOException {
+		/*
 		if( !new File(textFilePath).exists()) throw new IOException("Could not access file (does not exist): " + textFilePath);
 		if(numExamplesToFetch % miniBatchSize != 0 ) throw new IllegalArgumentException("numExamplesToFetch must be a multiple of miniBatchSize");
 		if( miniBatchSize <= 0 ) throw new IllegalArgumentException("Invalid miniBatchSize (must be >0)");
@@ -92,10 +94,13 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		int nRemoved = maxSize - fileCharacters.length;
 		System.out.println("Loaded and converted file: " + fileCharacters.length + " valid characters of "
 		+ maxSize + " total characters (" + nRemoved + " removed)");
-	}
+		
+		*/
+		
+//	}
 	
 	/** A minimal character set, with a-z, A-Z, 0-9 and common punctuation etc */
-	public static char[] getMinimalCharacterSet(){
+/*	public static char[] getMinimalCharacterSet(){
 		List<Character> validChars = new LinkedList<>();
 		for(char c='a'; c<='z'; c++) validChars.add(c);
 		for(char c='A'; c<='Z'; c++) validChars.add(c);
@@ -107,9 +112,10 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		for( Character c : validChars ) out[i++] = c;
 		return out;
 	}
+	*/
 	
 	/** As per getMinimalCharacterSet(), but with a few extra characters */
-	public static char[] getDefaultCharacterSet(){
+/*	public static char[] getDefaultCharacterSet(){
 		List<Character> validChars = new LinkedList<>();
 		for(char c : getMinimalCharacterSet() ) validChars.add(c);
 		char[] additionalChars = {'@', '#', '$', '%', '^', '*', '{', '}', '[', ']', '/', '+', '_',
@@ -120,7 +126,8 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		for( Character c : validChars ) out[i++] = c;
 		return out;
 	}
-	
+	*/
+/*	
 	public char convertIndexToCharacter( int idx ){
 		return validCharacters[idx];
 	}
@@ -132,7 +139,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	public char getRandomCharacter(){
 		return validCharacters[(int) (rng.nextDouble()*validCharacters.length)];
 	}
-
+*/
 	public boolean hasNext() {
 		return examplesSoFar + miniBatchSize <= numExamplesToFetch;
 	}
@@ -141,11 +148,19 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		return next(miniBatchSize);
 	}
 
+	/**
+	 * TODO: Cut here ----------------------------------
+	 * 
+	 * 
+	 */
 	public DataSet next(int num) {
+		
+		
+		
 		if( examplesSoFar+num > numExamplesToFetch ) throw new NoSuchElementException();
 		//Allocate space:
-		INDArray input = Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
-		INDArray labels = Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
+		INDArray input = null; //Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
+		INDArray labels = null; //Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
 		
 		int maxStartIdx = fileCharacters.length - exampleLength;
 		
@@ -155,12 +170,14 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 			int startIdx = (int) (rng.nextDouble()*maxStartIdx);
 			int endIdx = startIdx + exampleLength;
 			int scanLength = 0;
+			/*
 			if(alwaysStartAtNewLine){
 				while(startIdx >= 1 && fileCharacters[startIdx-1] != '\n' && scanLength++ < MAX_SCAN_LENGTH ){
 					startIdx--;
 					endIdx--;
 				}
 			}
+			*/
 			
 			int currCharIdx = charToIdxMap.get(fileCharacters[startIdx]);	//Current input
 			int c=0;
@@ -181,11 +198,11 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	}
 
 	public int inputColumns() {
-		return numCharacters;
+		return 0; //numCharacters;
 	}
 
 	public int totalOutcomes() {
-		return numCharacters;
+		return 0; //numCharacters;
 	}
 
 	public void reset() {
