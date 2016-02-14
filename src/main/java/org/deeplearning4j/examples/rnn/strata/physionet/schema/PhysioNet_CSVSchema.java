@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.math3.util.Pair;
+import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.ColumnType;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.TransformType;
 
@@ -273,6 +274,15 @@ public class PhysioNet_CSVSchema {
 
 	}
 
+	/**
+	 * TODO:
+	 * 
+	 * 		-	need to track the time rating to look at the duration of visits (min, max) --- convert to total seconds elapsed
+	 * 		-	need to track the sample count per patient (min, max) for padding purposes
+	 * 
+	 * @param csvRecordLine
+	 * @throws Exception
+	 */
 	public void evaluateInputRecord(String csvRecordLine) throws Exception {
 
 		// does the record have the same number of columns that our schema expects?
@@ -280,16 +290,16 @@ public class PhysioNet_CSVSchema {
 		String[] columns = csvRecordLine.split( this.delimiter );
 
 		if (Strings.isNullOrEmpty(columns[0])) {
-			System.out.println("Skipping blank line");
+			//System.out.println("Skipping blank line");
 			return;
 		}
 
-		if (columns.length != this.columnSchemas.size() ) {
+		if (columns.length != 3 ) { // this.columnSchemas.size() ) {
 
 			throw new Exception("Row column count does not match schema column count. (" + columns.length + " != " + this.columnSchemas.size() + ") ");
 
 		}
-
+/*
 		int colIndex = 0;
 
 		for (Map.Entry<String, TimeseriesSchemaColumn> entry : this.columnSchemas.entrySet()) {
@@ -304,7 +314,46 @@ public class PhysioNet_CSVSchema {
 		    colIndex++;
 
 		}
+*/
+		// get current Column Name
+		
+		String colName = columns[ 1 ].trim().toLowerCase();
+		String colValue = columns[ 2 ].trim();
+		TimeseriesSchemaColumn colSchemaEntry = this.columnSchemas.get(colName);
+		
+		if (null == colSchemaEntry) {
+			System.out.println( "Could not find schema entry for column name: " + colName );
+			return;
+		}
 
+    	if (PhysioNet_Vectorizer.isRecordGeneralDescriptor(columns)) {
+    		
+   		 
+    		//this.schema.evaluateInputRecord( csvLine );
+   		 
+    	//	descriptorLineCount++;
+    		colSchemaEntry.evaluateColumnValue( colValue );
+   		
+   	
+    	} else if (PhysioNet_Vectorizer.isHeader(columns)) {
+   		
+   		
+    	//	System.out.println( "Skipping Header Line: " + csvLine );
+   		
+   	
+    	} else {
+   		
+   		
+    		//this.schema.evaluateInputRecord( csvLine );
+    		colSchemaEntry.evaluateColumnValue( colValue );
+   		
+    	//	timeseriesLineCount++;
+   		
+   	
+    	}
+		
+		
+		
 	}
 
 

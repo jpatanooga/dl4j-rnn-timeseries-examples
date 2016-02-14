@@ -11,9 +11,15 @@ public class TestPhysioNet_Vectorizer {
 	@Test
 	public void testScanDirectory() {
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/data/physionet/sample/set-a/", "src/test/resources/physionet_schema.txt" );
+		//PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/data/physionet/sample/set-a/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		vec.loadSchema();
+
 		vec.collectStatistics();
-		
+		vec.schema.computeDatasetStatistics();
+
+		vec.schema.debugPrintDatasetStatistics();
+
 	}
 
 	

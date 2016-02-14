@@ -106,7 +106,9 @@ public class PhysioNet_Vectorizer {
 	    	
 	    	}
 	    	
-	    }		
+	    }
+	    
+	    
 		
 	}
 	
@@ -114,6 +116,10 @@ public class PhysioNet_Vectorizer {
 		
 		try (BufferedReader br = new BufferedReader(new FileReader( filepath ) ) ) {
 		    String csvLine;
+		    
+		    int descriptorLineCount = 0;
+		    int timeseriesLineCount = 0;
+		    
 		    while ((csvLine = br.readLine()) != null) {
 		       // process the line.
 		    	
@@ -123,19 +129,33 @@ public class PhysioNet_Vectorizer {
 		    	//System.out.println( csvLine );
 		    	if (this.isRecordGeneralDescriptor(columns)) {
 		    		
+		    		 this.schema.evaluateInputRecord( csvLine );
+		    		 descriptorLineCount++;
 		    		
 		    	} else if (this.isHeader(columns)) {
 		    		
+		    		System.out.println( "Skipping Header Line: " + csvLine );
 		    		
 		    	} else {
+		    		
+		    		this.schema.evaluateInputRecord( csvLine );
+		    		timeseriesLineCount++;
 		    		
 		    	}
 		    	
 		    }
+		    
+		    System.out.println( "Stats for: " + filepath );
+		    System.out.println( "Descriptor Lines: " + descriptorLineCount );
+		    System.out.println( "Timeseries Lines: " + timeseriesLineCount );
+		    
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
@@ -151,7 +171,7 @@ public class PhysioNet_Vectorizer {
 	 * @param line
 	 * @return
 	 */
-	public boolean isRecordGeneralDescriptor( String[] columns ) {
+	public static boolean isRecordGeneralDescriptor( String[] columns ) {
 		
 		String colVal = columns[ 0 ];
 		
@@ -162,7 +182,7 @@ public class PhysioNet_Vectorizer {
 		return false;
 	}
 	
-	public boolean isHeader( String[] columns ) {
+	public static boolean isHeader( String[] columns ) {
 		
 		String colVal = columns[ 0 ];
 		
