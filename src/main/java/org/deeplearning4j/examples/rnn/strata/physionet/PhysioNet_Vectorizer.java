@@ -1,11 +1,19 @@
 package org.deeplearning4j.examples.rnn.strata.physionet;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.PhysioNet_CSVSchema;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
 
 /**
  * Scans over timeseries dataset and collects statistics.
+ * 
+ * Serves as custom schema system combined with vectorizer
  * 
  * 
  * @author josh
@@ -16,37 +24,158 @@ public class PhysioNet_Vectorizer {
 	boolean hasCollectedStatistics = false;
 	String srcDir = null;
 	String currentPatientFile = null;
+	String columnDelimiter = ",";
+	String schemaPath = "";
 	
-	// the general descriptor columns that occur @ time offset "00:00"
-	HashMap<String, TimeseriesSchemaColumn > descriptor_columns = new HashMap<String, TimeseriesSchemaColumn >(); 
+	public PhysioNet_CSVSchema schema = null;
+	
 
-	// the detected timeseries columns after time offset "00:00"
-	HashMap<String, TimeseriesSchemaColumn > timeseries_columns = new HashMap<String, TimeseriesSchemaColumn >(); 
-
 	
 	
-	public PhysioNet_Vectorizer(String srcDirectory) {
+	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath) {
 		
 		this.srcDir = srcDirectory;
+		this.schema = new PhysioNet_CSVSchema( );
+		this.schemaPath = schemaPath;
+		
+	}
+	
+	public void loadSchema() {
+		
+		try {
+			this.schema.parseSchemaFile( this.schemaPath );
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	
 	/**
-	 * For each timestep we want to 
+	 * The purpose of collecting summary statistics for PhysioNet is to 
+	 * 
+	 * 	1. discover all of the columns
+	 * 	2. get the ranges of their values
 	 * 
 	 */
 	public void collectStatistics() {
 		
 		// for each patient file
 		
-			// open the file
+		System.out.println( "scanning: " + this.srcDir );
 		
-				// scan through every line
+		File folder = new File( this.srcDir );
+		
+		if (!folder.exists()) {
+			System.out.println("File Does Not Exist.");
+			return;
+		}
+		
+		if (folder.isDirectory()) {
+			
+		} else {
+			System.out.println("This is a single file");
+		}
+		
+		File[] listOfFiles = folder.listFiles();
+		
+		// System.out.println( "list: " + listOfFiles );
+
+	    for (int i = 0; i < listOfFiles.length; i++) {
+
+	    	if (listOfFiles[i].isFile()) {
+	    	
+	    		System.out.println("File: " + listOfFiles[i].getName() );
+	    		
+	    		String tmpPath = this.srcDir;
+	    		if (tmpPath.trim().endsWith("/")) {
+	    			
+	    			tmpPath += listOfFiles[i].getName();
+	    			
+	    		} else {
+	    			
+	    			tmpPath += "/" + listOfFiles[i].getName();
+	    			
+	    		}
+	    		
+	    		this.scanFileForData( tmpPath );
+	    	
+	    	} else if (listOfFiles[i].isDirectory()) {
+	    	
+	    		System.out.println("Directory: " + listOfFiles[i].getName());
+	    	
+	    	}
+	    	
+	    }		
+		
+	}
+	
+	public void scanFileForData(String filepath) {
+		
+		try (BufferedReader br = new BufferedReader(new FileReader( filepath ) ) ) {
+		    String csvLine;
+		    while ((csvLine = br.readLine()) != null) {
+		       // process the line.
+		    	
+				// open the file
+		    	//String csvLine = value.toString();
+		    	String[] columns = csvLine.split( columnDelimiter );
+		    	//System.out.println( csvLine );
+		    	if (this.isRecordGeneralDescriptor(columns)) {
+		    		
+		    		
+		    	} else if (this.isHeader(columns)) {
+		    		
+		    		
+		    	} else {
+		    		
+		    	}
+		    	
+		    }
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		
+		
 		
 		
 	}
 	
-	public static float parseElapsedTimeForVisit() {
+	/**
+	 * Tells us if this is the first set of values at time offset "00:00"
+	 * 
+	 * @param line
+	 * @return
+	 */
+	public boolean isRecordGeneralDescriptor( String[] columns ) {
+		
+		String colVal = columns[ 0 ];
+		
+		if (colVal.trim().equals("00:00")) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public boolean isHeader( String[] columns ) {
+		
+		String colVal = columns[ 0 ];
+		
+		if (colVal.trim().equals("Time")) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	
+	public static float parseElapsedTimeForVisitInTotalMinutes(String timeFormatRaw) {
 		
 		return 0;
 	}

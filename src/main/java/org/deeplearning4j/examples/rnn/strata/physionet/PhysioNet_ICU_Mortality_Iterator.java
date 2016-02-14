@@ -21,7 +21,7 @@ import org.nd4j.linalg.factory.Nd4j;
 public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	private static final long serialVersionUID = -7287833919126626356L;
 	private static final int MAX_SCAN_LENGTH = 200; 
-	private char[] validCharacters;
+	//private char[] validCharacters;
 	private Map<Character,Integer> charToIdxMap;
 	private char[] fileCharacters;
 	private int exampleLength;
@@ -151,13 +151,17 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	/**
 	 * TODO: Cut here ----------------------------------
 	 * 
+	 * Dimensions of input
+	 * 	x: miniBatchSize
+	 *  y: every column we want to look at per timestep (basically our traditional vector)
+	 *  z: the timestep value
 	 * 
 	 */
-	public DataSet next(int num) {
+	public DataSet next(int miniBatchSize) {
 		
 		
 		
-		if( examplesSoFar+num > numExamplesToFetch ) throw new NoSuchElementException();
+		if( examplesSoFar + miniBatchSize > numExamplesToFetch ) throw new NoSuchElementException();
 		//Allocate space:
 		INDArray input = null; //Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
 		INDArray labels = null; //Nd4j.zeros(new int[]{num,numCharacters,exampleLength});
@@ -166,7 +170,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		
 		//Randomly select a subset of the file. No attempt is made to avoid overlapping subsets
 		// of the file in the same minibatch
-		for( int i=0; i<num; i++ ){
+		for( int i=0; i < miniBatchSize; i++ ){
 			int startIdx = (int) (rng.nextDouble()*maxStartIdx);
 			int endIdx = startIdx + exampleLength;
 			int scanLength = 0;
@@ -189,7 +193,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 			}
 		}
 		
-		examplesSoFar += num;
+		examplesSoFar += miniBatchSize;
 		return new DataSet(input,labels);
 	}
 
