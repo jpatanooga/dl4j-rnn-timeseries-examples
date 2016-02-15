@@ -2,6 +2,7 @@ package org.deeplearning4j.examples.rnn.strata.physionet.schema;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,13 +24,14 @@ public class PhysioNet_CSVSchema {
 
 	// columns: { columnName, column Schema }
 	private Map<String, TimeseriesSchemaColumn> columnSchemas = new LinkedHashMap<>();
+	public Map<String, Integer> rogueColumns = new LinkedHashMap<>();
 	
 	// the general descriptor columns that occur @ time offset "00:00"
 	// "column name", column
-	LinkedHashMap<String, TimeseriesSchemaColumn > descriptor_columns = new LinkedHashMap<String, TimeseriesSchemaColumn >(); 
+	//LinkedHashMap<String, TimeseriesSchemaColumn > descriptor_columns = new LinkedHashMap<String, TimeseriesSchemaColumn >(); 
 
 	// the detected timeseries columns after time offset "00:00"
-	LinkedHashMap<String, TimeseriesSchemaColumn > timeseries_columns = new LinkedHashMap<String, TimeseriesSchemaColumn >(); 
+	//LinkedHashMap<String, TimeseriesSchemaColumn > timeseries_columns = new LinkedHashMap<String, TimeseriesSchemaColumn >(); 
 	
 
 	public TimeseriesSchemaColumn getColumnSchemaByName( String colName ) {
@@ -54,7 +56,7 @@ public class PhysioNet_CSVSchema {
 		
 		// first check that we have enough parts on the line
 		
-		if ( lineParts.length != 4 ) {
+		if ( lineParts.length != 5 ) {
 			return false;
 		}
 		
@@ -149,16 +151,23 @@ public class PhysioNet_CSVSchema {
 
 		String columnName = parts[1].trim();
 		String columnType = parts[2].replace("\t", " ").trim();
-		String columnTransform = parts[3].trim();
+		String columnTemporalType = parts[3].replace("\t", " ").trim();
+		String columnTransform = parts[4].trim();
 		//System.out.println( "col: '" + columnType.toUpperCase().trim() + "' " );
+		
 		TimeseriesSchemaColumn.ColumnType colTypeEnum =
 				TimeseriesSchemaColumn.ColumnType.valueOf(columnType.toUpperCase());
+
+		TimeseriesSchemaColumn.ColumnTemporalType colTemporalTypeEnum =
+				TimeseriesSchemaColumn.ColumnTemporalType.valueOf(columnTemporalType.toUpperCase());
+		
+		
 		TimeseriesSchemaColumn.TransformType colTransformEnum =
 				TimeseriesSchemaColumn.TransformType.valueOf(columnTransform.toUpperCase().substring(1));
 
 		
 		
-		return new TimeseriesSchemaColumn( columnName, colTypeEnum, colTransformEnum );
+		return new TimeseriesSchemaColumn( columnName, colTypeEnum, colTransformEnum, colTemporalTypeEnum );
 	}
 
 	private void addSchemaLine( String line ) {
@@ -315,14 +324,30 @@ public class PhysioNet_CSVSchema {
 
 		}
 */
-		// get current Column Name
+
 		
+
+		
+		// get current Column Name		
 		String colName = columns[ 1 ].trim().toLowerCase();
 		String colValue = columns[ 2 ].trim();
 		TimeseriesSchemaColumn colSchemaEntry = this.columnSchemas.get(colName);
 		
 		if (null == colSchemaEntry) {
-			System.out.println( "Could not find schema entry for column name: " + colName );
+			//System.out.println( "Could not find schema entry for column name: " + colName );
+			//this.rogueColumns.add( colName );
+			if (!this.rogueColumns.containsKey( colName )) {
+				
+				// add it
+				this.rogueColumns.put(colName, 1);
+				
+			} else {
+				
+				int val = this.rogueColumns.get(colName);
+				val++;
+				this.rogueColumns.put(colName, new Integer(val));
+				
+			}
 			return;
 		}
 
@@ -357,6 +382,23 @@ public class PhysioNet_CSVSchema {
 	}
 
 
+	public void debugPrintRogueColumns() {
+
+		System.out.println( "Rogue Columns Found:" );
+		
+		for (Map.Entry<String, Integer> entry : this.rogueColumns.entrySet()) {
+
+			String key = entry.getKey();
+			int count = entry.getValue();
+
+			System.out.println( "" + key + " > " + count  );
+			
+		}
+		
+		
+	}
+	
+	
 
 	/**
 	 * We call this method once we've scanned the entire dataset once to gather column stats
@@ -387,20 +429,34 @@ public class PhysioNet_CSVSchema {
 
 		  // now work with key and value...
 
-		  System.out.println("> " + value.name + ", " + value.columnType + ", " + value.transform);
+		  System.out.println("> " + value.name + ", " + value.columnType + ", " + value.columnTemporalType + ", " + value.transform);
 
 		  if ( value.transform == TransformType.LABEL ) {
 
 			  System.out.println("\t> Label > Class Balance Report ");
 			  
 			  int totalLabels = 0;
+			  boolean printedSkipMessage = false;
 
 			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
 
+				  // || totalLabels > value.recordLabels.size() - 10
+//				  if (totalLabels < 10 ) {
+				  
 			  	// value.recordLabels.size()
-			  	System.out.println("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond());
+					  System.out.println("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond());
 
-			  	totalLabels += label.getValue().getSecond();
+					  
+/*					  
+				  } else if (!printedSkipMessage) {
+					  
+					  System.out.println( "[ skipping some labels ... ]" );
+					  printedSkipMessage = true;
+					  
+				  }
+				  */
+				  
+				  totalLabels += label.getValue().getSecond();
 			  	
 			  }
 			  
@@ -415,11 +471,22 @@ public class PhysioNet_CSVSchema {
 			  System.out.println("\t> Nominal > Category Balance Report ");
 			  
 			  int totalCategories = 0;
+			  boolean printedSkipMessage = false;
 
 			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
 
+				  
+				  if (totalCategories < 10  || totalCategories > value.recordLabels.size() - 10) {
+
 			  	// value.recordLabels.size()
-			  	System.out.println("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond());
+					  System.out.println("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond());
+					  
+				  } else if (!printedSkipMessage) {
+					  
+					  System.out.println( "[ skipping some labels ... ]" );
+					  printedSkipMessage = true;
+					  
+				  }
 
 			  	totalCategories += label.getValue().getSecond();
 			  	
@@ -430,6 +497,7 @@ public class PhysioNet_CSVSchema {
 			  System.out.println("\t\tMissed Category Lookups: " + value.missedLabelLookups);				  
 			  
 			  System.out.println("\t\tTotal Values Seen: " + value.count);
+			  System.out.println("\t\tMissing Values: " + value.missingValues);
 			  
 		  } else {
 
@@ -440,6 +508,8 @@ public class PhysioNet_CSVSchema {
 			    System.out.println("\t\tavg: " + value.avg);
 			    System.out.println("\t\tvariance: " + value.variance);
 			    System.out.println("\t\tstddev: " + value.stddev);
+			    System.out.println("\t\tmissing values: " + value.missingValues);
+			    
 
 		    }
 

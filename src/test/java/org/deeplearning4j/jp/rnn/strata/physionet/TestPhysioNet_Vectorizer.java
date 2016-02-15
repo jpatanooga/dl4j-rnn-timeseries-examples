@@ -17,6 +17,10 @@ public class TestPhysioNet_Vectorizer {
 
 		vec.collectStatistics();
 		vec.schema.computeDatasetStatistics();
+		
+		vec.debugStats();
+		
+		vec.schema.debugPrintRogueColumns();
 
 		vec.schema.debugPrintDatasetStatistics();
 
@@ -55,7 +59,21 @@ public class TestPhysioNet_Vectorizer {
 
 	@Test
 	public void testParseTimeseriesValues() {
-	//	fail("Not yet implemented");
+
+		String testValue_0 = "00:00";
+		String testValue_1 = "00:07";
+		String testValue_2 = "26:07";
+		
+		int result_0 = PhysioNet_Vectorizer.parseElapsedTimeForVisitInTotalMinutes(testValue_0);
+		assertEquals( 0, result_0 );
+
+		int result_1 = PhysioNet_Vectorizer.parseElapsedTimeForVisitInTotalMinutes(testValue_1);
+		assertEquals( 7, result_1 );
+
+		int result_2 = PhysioNet_Vectorizer.parseElapsedTimeForVisitInTotalMinutes(testValue_2);
+		assertEquals( 1567, result_2 );
+
+		
 	}
 
 	

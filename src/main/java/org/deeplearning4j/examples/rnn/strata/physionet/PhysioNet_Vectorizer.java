@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.PhysioNet_CSVSchema;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
@@ -29,7 +31,11 @@ public class PhysioNet_Vectorizer {
 	
 	public PhysioNet_CSVSchema schema = null;
 	
+	public int minNumberTimeseriesEntriesForPatientRecord = 100; // think better about this
+	public int maxNumberTimeseriesEntriesForPatientRecord = 0;
 
+	public int minNumberTimeSteps = 100;
+	public int maxNumberTimeSteps = 0;
 	
 	
 	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath) {
@@ -79,13 +85,13 @@ public class PhysioNet_Vectorizer {
 		
 		File[] listOfFiles = folder.listFiles();
 		
-		// System.out.println( "list: " + listOfFiles );
+		 System.out.println( "Found Files: " + listOfFiles.length + "\n" );
 
 	    for (int i = 0; i < listOfFiles.length; i++) {
 
 	    	if (listOfFiles[i].isFile()) {
 	    	
-	    		System.out.println("File: " + listOfFiles[i].getName() );
+	    		// System.out.println("File: " + listOfFiles[i].getName() );
 	    		
 	    		String tmpPath = this.srcDir;
 	    		if (tmpPath.trim().endsWith("/")) {
@@ -98,7 +104,7 @@ public class PhysioNet_Vectorizer {
 	    			
 	    		}
 	    		
-	    		this.scanFileForData( tmpPath );
+	    		this.scanFileForStatistics( tmpPath );
 	    	
 	    	} else if (listOfFiles[i].isDirectory()) {
 	    	
@@ -112,13 +118,14 @@ public class PhysioNet_Vectorizer {
 		
 	}
 	
-	public void scanFileForData(String filepath) {
+	public void scanFileForStatistics(String filepath) {
 		
 		try (BufferedReader br = new BufferedReader(new FileReader( filepath ) ) ) {
 		    String csvLine;
 		    
 		    int descriptorLineCount = 0;
 		    int timeseriesLineCount = 0;
+		    Map<String, Integer> timeStepMap = new LinkedHashMap<>();
 		    
 		    while ((csvLine = br.readLine()) != null) {
 		       // process the line.
@@ -126,28 +133,75 @@ public class PhysioNet_Vectorizer {
 				// open the file
 		    	//String csvLine = value.toString();
 		    	String[] columns = csvLine.split( columnDelimiter );
+		    	
+
+
+		    	
+		    	
 		    	//System.out.println( csvLine );
-		    	if (this.isRecordGeneralDescriptor(columns)) {
+		    	if ( isRecordGeneralDescriptor(columns) ) {
 		    		
 		    		 this.schema.evaluateInputRecord( csvLine );
 		    		 descriptorLineCount++;
 		    		
-		    	} else if (this.isHeader(columns)) {
+		    	} else if ( isHeader(columns) ) {
 		    		
-		    		System.out.println( "Skipping Header Line: " + csvLine );
+		    	//	System.out.println( "Skipping Header Line: " + csvLine );
 		    		
 		    	} else {
 		    		
 		    		this.schema.evaluateInputRecord( csvLine );
 		    		timeseriesLineCount++;
+
+		    		
+		    		// now deal with a timeseries line
+		    		
+					String timeslot = columns[ 0 ].trim();
+					
+					if (timeStepMap.containsKey(timeslot)) {
+						 // increment
+						
+					} else {
+						// add key
+						timeStepMap.put(timeslot, 1);
+					}
+		    		
 		    		
 		    	}
 		    	
 		    }
 		    
-		    System.out.println( "Stats for: " + filepath );
-		    System.out.println( "Descriptor Lines: " + descriptorLineCount );
-		    System.out.println( "Timeseries Lines: " + timeseriesLineCount );
+		    if (timeStepMap.size() == 0) {
+		    	
+		    	System.out.println( "File " + filepath + " contained no timesteps!" );
+		    	
+		    }
+		    
+		    //System.out.println( "Stats for: " + filepath );
+		    //System.out.println( "Descriptor Lines: " + descriptorLineCount );
+		    //System.out.println( "Timeseries Lines: " + timeseriesLineCount );
+		    
+		    if (timeseriesLineCount > this.maxNumberTimeseriesEntriesForPatientRecord) {
+		    	this.maxNumberTimeseriesEntriesForPatientRecord = timeseriesLineCount;
+		    }
+
+		    if (timeseriesLineCount < this.minNumberTimeseriesEntriesForPatientRecord) {
+		    	this.minNumberTimeseriesEntriesForPatientRecord = timeseriesLineCount;
+		    }
+		    
+		    if ( timeStepMap.size() > this.maxNumberTimeSteps) {
+		    	this.maxNumberTimeSteps = timeStepMap.size();
+		    }
+		    
+		    if ( timeStepMap.size() < this.minNumberTimeSteps) {
+		    	this.minNumberTimeSteps = timeStepMap.size();
+		    }
+		    
+		    
+		    //System.out.println( "Min Timeseries In a Record So Far: " + this.minNumberTimeseriesEntriesForPatientRecord );
+		    //System.out.println( "Max Timeseries In a Record So Far: " + this.maxNumberTimeseriesEntriesForPatientRecord );
+		    
+		    
 		    
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -161,6 +215,20 @@ public class PhysioNet_Vectorizer {
 		}		
 		
 		
+		
+		
+	}
+	
+	public void debugStats() {
+		
+		System.out.println( " ----------------- Vectorizer Process Stats ---------------- " );
+	    System.out.println( "Min Timeseries In a Record: " + this.minNumberTimeseriesEntriesForPatientRecord );
+	    System.out.println( "Max Timeseries In a Record: " + this.maxNumberTimeseriesEntriesForPatientRecord );
+	    
+	    System.out.println( "Min TimeSteps In a Record: " + this.minNumberTimeSteps );
+	    System.out.println( "Max TimeSteps In a Record: " + this.maxNumberTimeSteps );
+	    
+	    System.out.println( " ----------------- Vectorizer Process Stats ---------------- " );
 		
 		
 	}
@@ -195,23 +263,80 @@ public class PhysioNet_Vectorizer {
 	
 	
 	
-	public static float parseElapsedTimeForVisitInTotalMinutes(String timeFormatRaw) {
+	public static int parseElapsedTimeForVisitInTotalMinutes(String timeFormatRaw) {
 		
-		return 0;
+		String[] parts = timeFormatRaw.trim().split(":");
+		String hours = parts[ 0 ];
+		String minutes = parts[ 1 ];
+		
+		int iHours = Integer.parseInt( hours );
+		int iMinutes = Integer.parseInt( minutes );
+		
+		
+		
+		return (60 * iHours) + iMinutes;
 	}
 	
 	/**
-	 * Rotates the currentPatientFile reference to the next one in the list
+	 * Mini-batch size: 
+	 * 		number of patients in a batch
+	 * 		also: number of files in the batch to open (we open a file and generate a slice of the mini-batch 3d output) 
+	 * 
+	 * 
+	 * TODO:
+	 * 		-	how do we handle labels?
 	 * 
 	 */
-	public void nextPatientRecord() {
+	public void generateNextTimeseriesVectorMiniBatch(int miniBatchSize) {
+		
+		// minibatch size is the 1st dimension in the matrix, which we get as a parameter
+		// do we have enough files left in our directory to give a full mini-batch? check for this
+
+		int columnCount = this.calculateTotalOutputColumnCount(); // 2nd dimension in matrix --- every column in the schema that is not !SKIP
+		
+		// what is the timestep count?
+		
+		int timestepCount = this.maxNumberTimeSteps; // 3rd dimension in matrix
+		
+		// for each mini-batch entry -> file
+		for ( int m = 0; m < miniBatchSize; m++) {
+
+			// open the file
+			
+			// for each (adjusted) timestep in the file, generate every column
+			
+			for ( int timeStep = 0; timeStep < timestepCount; timeStep++ ) {
+				
+				// CONSIDER: DOES The file have data for the full 202 timesteps?
+				// IF NOT >> need to do some padding
+				
+				// calculate delta-T for the adjusted timestamp column
+				
+				for ( int col = 0; col < columnCount; col++ ) {
+					
+					// now run through every other column we want to drop in for this timestep
+					
+					
+				}
+				
+			}
+			
+		}
+
+		
 		
 	}
 	
-	public void nextRecordInSequence() {
+	public int calculateTotalOutputColumnCount() {
 		
+		// timestep delta-T
+		
+		// all columns we aren't skipping
+		
+		return 0;
 		
 	}
+	
 	
 
 }

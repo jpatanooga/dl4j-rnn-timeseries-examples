@@ -19,6 +19,7 @@ public class TimeseriesSchemaColumn {
 
 	public String name = ""; // the name of the attribute/column
 	public ColumnType columnType = null;
+	public ColumnTemporalType columnTemporalType = null;
 	public TransformType transform = null; 
 
 	/*
@@ -36,6 +37,8 @@ public class TimeseriesSchemaColumn {
 	public double varianceTmpSum = 0;
 	public double stddev = Double.NaN;
 	
+	public int missingValues = 0;
+	
 	//public double stddev = 0;
 	//public double median = 0;
 	
@@ -49,11 +52,12 @@ public class TimeseriesSchemaColumn {
 	public Map<String, Pair<Integer, Integer>> recordLabels = new LinkedHashMap<>();
 	
 	
-	public TimeseriesSchemaColumn(String colName, ColumnType colType, TransformType transformType) {
+	public TimeseriesSchemaColumn(String colName, ColumnType colType, TransformType transformType, ColumnTemporalType temporalType) {
 		
 		this.name = colName;
 		this.columnType = colType;
 		this.transform = transformType;
+		this.columnTemporalType = temporalType;
 		
 	}
 	
@@ -81,32 +85,37 @@ public class TimeseriesSchemaColumn {
 			double tmpVal = Double.parseDouble(value);
 			
 			// System.out.println( "converted: " + tmpVal );
-			
-			if (Double.isNaN(tmpVal)) {
-				throw new Exception("The column was defined as Numeric yet could not be parsed as a Double");
+			if (-1.0 == tmpVal) {
+				this.missingValues++;
+			} else {
+				
+				if (Double.isNaN(tmpVal)) {
+					throw new Exception("The column was defined as Numeric yet could not be parsed as a Double");
+				}
+				
+				if ( Double.isNaN( this.minValue ) ) {
+				
+					this.minValue = tmpVal;
+					
+				} else if (tmpVal < this.minValue) {
+					
+					this.minValue = tmpVal;
+					
+				}
+				
+				if ( Double.isNaN( this.maxValue ) ) {
+					
+					this.maxValue = tmpVal;
+					
+				} else if (tmpVal > this.maxValue) {
+					
+					this.maxValue = tmpVal;
+					
+				}
+				
+				this.sum += tmpVal;
+				
 			}
-			
-			if ( Double.isNaN( this.minValue ) ) {
-			
-				this.minValue = tmpVal;
-				
-			} else if (tmpVal < this.minValue) {
-				
-				this.minValue = tmpVal;
-				
-			}
-			
-			if ( Double.isNaN( this.maxValue ) ) {
-				
-				this.maxValue = tmpVal;
-				
-			} else if (tmpVal > this.maxValue) {
-				
-				this.maxValue = tmpVal;
-				
-			}
-			
-			this.sum += tmpVal;
 			
 			//System.out.println( "sum: " + this.sum + " value = " + value + ", tmpVal = " + tmpVal );
 			
