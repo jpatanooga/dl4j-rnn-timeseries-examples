@@ -2,7 +2,12 @@ package org.deeplearning4j.jp.rnn.strata.physionet;
 
 import static org.junit.Assert.*;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
 import org.junit.Test;
 
 public class TestPhysioNet_Vectorizer {
@@ -41,7 +46,72 @@ public class TestPhysioNet_Vectorizer {
 	
 	@Test
 	public void testSkipHeader() {
-	//	fail("Not yet implemented");
+
+		Map<Integer, String> map = new TreeMap<Integer, String>();
+
+		// Add Items to the TreeMap
+		map.put(new Integer(11), "One");
+		map.put(new Integer(2), "Two");
+		map.put(new Integer(3), "Three");
+
+		// Iterate over them
+		for(Map.Entry<Integer,String> entry : map.entrySet()) {
+		  System.out.println(entry.getKey() + " => " + entry.getValue());
+		}		
+		
+	}
+	
+	@Test
+	public void testVectorizeFile() {
+		
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		vec.loadSchema();
+
+		vec.collectStatistics();
+		vec.schema.computeDatasetStatistics();
+
+		vec.extractFileContentsAndVectorize( "/tmp/set-a/140505.txt", 1, 1, null, null);
+		
+		vec.schema.debugPrintDatasetStatistics();
+		
+	}
+
+	@Test
+	public void testVectorizeFile_SchemaTransform() {
+		
+/*
+   @ATTRIBUTE icutype  		NUMERIC DESCRIPTOR   !NORMALIZE !REPLACE=5
+   @ATTRIBUTE albumin		NUMERIC TIMESERIES		!NORMALIZE !PAD_TAIL_WITH_ZEROS
+   @ATTRIBUTE alp		NUMERIC TIMESERIES		!NORMALIZE !PAD_TAIL_WITH_ZEROS
+		
+ */
+		
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		vec.loadSchema();
+		
+		assertEquals( "-1", vec.schema.customValueForMissingValue );
+		
+		TimeseriesDescriptorSchemaColumn column_icutype = vec.schema.getDescriptorColumnSchemaByName("icutype");
+		assertEquals( TimeseriesSchemaColumn.ColumnDescriptorMissingValueStrategy.ZERO, column_icutype.missingValStrategy );
+		//assertEquals( "5", column_icutype.customMissingValueReplacementValue );
+
+		TimeseriesSchemaColumn column_platelets = vec.schema.getTimeseriesColumnSchemaByName("alp");
+		assertEquals( TimeseriesSchemaColumn.ColumnTimeseriesPaddingStrategyType.PAD_TAIL_WITH_ZEROS, column_platelets.paddingStrategy );
+		//assertEquals( "0", column_platelets.customMissingValueReplacementValue );
+		
+		
+		
+		
+		vec.collectStatistics();
+		//vec.schema.computeDatasetStatistics();
+
+	//	vec.schema.debugPrintDatasetStatistics();		
+		vec.schema.debugPrintDatasetStatistics();
+		
+		vec.extractFileContentsAndVectorize( "src/test/resources/physionet_sample_data.txt", 1, 1, null, null);
+		
+
+		
 	}
 
 	
@@ -53,7 +123,7 @@ public class TestPhysioNet_Vectorizer {
 		
 		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt");
 		
-		assertEquals( true, vec.isRecordGeneralDescriptor(columns) );
+		assertEquals( true, vec.isRecordGeneralDescriptor(columns, vec.schema) );
 		
 	}
 

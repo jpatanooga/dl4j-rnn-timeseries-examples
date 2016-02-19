@@ -1,39 +1,29 @@
 package org.deeplearning4j.examples.rnn.strata.physionet.schema;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.math3.util.Pair;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.ColumnDescriptorMissingValueStrategy;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.ColumnTemporalType;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.ColumnType;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn.TransformType;
 
-
-public class TimeseriesSchemaColumn {
+public class TimeseriesDescriptorSchemaColumn {
 
 	public PhysioNet_CSVSchema schema = null;
 	
-	public enum ColumnType { NUMERIC, DATE, NOMINAL };
-	public enum ColumnTemporalType { DESCRIPTOR, TIMESERIES };
-	public enum TransformType { COPY, SKIP, BINARIZE, NORMALIZE, LABEL, UNIQUE_ID, ZEROMEAN_ZEROUNITVARIANCE };
+	
 
-	public enum ColumnTimeseriesPaddingStrategyType { PAD_TAIL_WITH_ZEROS, INTERPOLATE_PROPAGATE_LAST_VALUE };
-	
-	public enum ColumnDescriptorMissingValueStrategy { ZERO, AVG };
-	
 	
 	public String name = ""; // the name of the attribute/column
 	public ColumnType columnType = null;
-	public ColumnTemporalType columnTemporalType = ColumnTemporalType.TIMESERIES;
 	public TransformType transform = null; 
-	public ColumnTimeseriesPaddingStrategyType paddingStrategy = null;
-	public double lastTimestepValue = 0.0;
-//	public MissingValueStrategy missingValStrategy = null;
-	//public String customMissingValueReplacementValue = "0";
+	public ColumnDescriptorMissingValueStrategy missingValStrategy = null;
+	public String customMissingValueReplacementValue = "0";
 	
-
+	public ColumnTemporalType columnTemporalType = ColumnTemporalType.DESCRIPTOR;
+	
 	/*
 	 * TODO:
 	 * - how do we model statistics per column?
@@ -64,14 +54,13 @@ public class TimeseriesSchemaColumn {
 	public Map<String, Pair<Integer, Integer>> recordLabels = new LinkedHashMap<>();
 	
 	
-	public TimeseriesSchemaColumn(String colName, ColumnType colType, TransformType transformType, ColumnTimeseriesPaddingStrategyType padStrategy, PhysioNet_CSVSchema schema) {
+	public TimeseriesDescriptorSchemaColumn(String colName, ColumnType colType, TransformType transformType, ColumnDescriptorMissingValueStrategy missingValStrategy, PhysioNet_CSVSchema schema) {
 		
 		this.name = colName;
 		this.columnType = colType;
 		this.transform = transformType;
-	//	this.columnTemporalType = temporalType;
-	//	this.missingValStrategy = missingValStrategy;
-		this.paddingStrategy = padStrategy;
+		//this.columnTemporalType = temporalType;
+		this.missingValStrategy = missingValStrategy;
 		
 		this.schema = schema;
 		
@@ -310,20 +299,20 @@ public class TimeseriesSchemaColumn {
 		return null;
 		
 	}
-	/*
+	
 	private String generateDefaultValue() {
 		
-		if (MissingValueStrategy.ZERO == this.missingValStrategy) {
+		if (ColumnDescriptorMissingValueStrategy.ZERO == this.missingValStrategy) {
 			
 			return "0.0";
 			
-		} else if (MissingValueStrategy.AVG == this.missingValStrategy) {
+		} else if (ColumnDescriptorMissingValueStrategy.AVG == this.missingValStrategy) {
 			
 			 return this.avg + "";
 			 
-		} else if (MissingValueStrategy.REPLACE == this.missingValStrategy) {
+//		} else if (MissingValueStrategy.REPLACE == this.missingValStrategy) {
 			
-			return this.customMissingValueReplacementValue;
+//			return this.customMissingValueReplacementValue;
 		}
 		
 		
@@ -331,35 +320,7 @@ public class TimeseriesSchemaColumn {
 		
 		return "0.0";
 	}
-	*/
 	
-	
-	/**
-	 * 
-* the patient has zero recorded measurements of that column (e.g., TropI).  In that case, your proposal is reasonable, although we might also want totry imputing the global mean or median.
-
-* that column (e.g., TropI) is not measured at a single time step. In that case, I vote we do one of the following:
-  - carry (or propagate) forward the value from the previous time step (which itself might be carried forward), if there is a previous recording
-  - impute a 0 or the global mean/median if there are NO previous recordings
-
-	 * 
-	 * 
-	 * @return
-	 */
-	private String generatePaddingStrategyValue() {
-		
-		if (ColumnTimeseriesPaddingStrategyType.PAD_TAIL_WITH_ZEROS == this.paddingStrategy) {
-			
-			return "0.0";
-		
-		} else if (ColumnTimeseriesPaddingStrategyType.INTERPOLATE_PROPAGATE_LAST_VALUE == this.paddingStrategy) {
-		
-			return this.lastTimestepValue + "";
-		
-		}
-		
-		return "0.0";
-	}
 	
 	public double transformColumnValue(String inputColumnValue) {
 
@@ -367,7 +328,7 @@ public class TimeseriesSchemaColumn {
 		
 		if ( null == inputColumnValue ) {
 			
-			inputColumnValue = this.generatePaddingStrategyValue(); //.generateDefaultValue();
+			inputColumnValue = this.generateDefaultValue();
 			
 		} else {
 		
@@ -375,14 +336,12 @@ public class TimeseriesSchemaColumn {
 			
 		}
 				
-		/*
 		if (this.schema.customValueForMissingValue.equals( inputColumnValue.trim() )) {
 			
 			// so its a missing value
 			inputColumnValue = this.generateDefaultValue();
 			
 		}
-		*/
 		
 	//	System.out.println( "Default: " + inputColumnValue );
 		
@@ -574,7 +533,6 @@ public class TimeseriesSchemaColumn {
 		
 		return return_value;
 		
-	}
-	
+	}	
 	
 }
