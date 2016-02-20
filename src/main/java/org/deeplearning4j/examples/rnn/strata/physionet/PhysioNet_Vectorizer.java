@@ -415,7 +415,7 @@ public class PhysioNet_Vectorizer {
 			
 			String filepath = "";
 			
-			this.extractFileContentsAndVectorize( filepath, columnCount, timestepCount, input, labels );
+			this.extractFileContentsAndVectorize( filepath, m, columnCount, timestepCount, input, labels );
 			
 			
 		}
@@ -492,7 +492,7 @@ public class PhysioNet_Vectorizer {
 	 * @param dstInput
 	 * @param dstLabels
 	 */
-	public void extractFileContentsAndVectorize(String filepath, int columnCount, int timeStepLength, INDArray dstInput, INDArray dstLabels) {
+	public void extractFileContentsAndVectorize(String filepath, int miniBatchIndex, int columnCount, int timeStepLength, INDArray dstInput, INDArray dstLabels) {
 		
 		Map<Integer, Map<String, String>> timestampTreeMap = new TreeMap< Integer, Map<String, String> >();
 		Map<String, String> generalDescriptorTreeMap = new HashMap<>();
@@ -587,7 +587,13 @@ public class PhysioNet_Vectorizer {
 		// Pass 2: vectorize the sortedMap Entries
 		
 		System.out.println("Debugging vectorization path ---------");
+		
+		//System.out.println( "length: " + dstInput.length() );
+		//System.out.println( "cols: " + dstInput.columns() );
+
+		
 		int lastTimestamp = 0;
+		int timeStepIndex = 0;
 		
 		//for ( int timeStep = 0; timeStep < timeStepLength; timeStep++ ) {
 		for (Map.Entry<Integer, Map<String, String>> entry : timestampTreeMap.entrySet()) {
@@ -605,16 +611,19 @@ public class PhysioNet_Vectorizer {
 			
 			// calculate delta-T for the adjusted timestamp column
 			
-			// this should match up to the schema -- scan the schema
-//			for ( int col = 0; col < columnCount; col++ ) {
-				
-				// now run through every other column we want to drop in for this timestep
-				
-				
-//			}
+			int columnIndex = 0;
+
+			// write the delta timestamp in the first column
+			int[] params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
+			System.out.println( "Timestep Pass -------------------------- " );
+			System.out.println( "Timestep: " + timeStepIndex );
+			//System.out.println( "Current Params: " + params[0] + ", " + params[1] + ", " + params[2] );
+			dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, deltaT );
+			columnIndex++;
 			
 			
-//			System.out.print("[Delta-T]:" + deltaT );
+			
+			System.out.print("[Delta-T]:" + deltaT +", Descriptors:[" );
 			
 			// first set of columns: Descriptors
 			
@@ -623,21 +632,32 @@ public class PhysioNet_Vectorizer {
 				String key = columnEntry.getKey();
 				TimeseriesDescriptorSchemaColumn schema_column = columnEntry.getValue();
 				
-				String val = generalDescriptorTreeMap.get( key );
-				
-				double transformedValue = schema_column.transformColumnValue( val );
-			/*	
-				if (this.schema.customValueForMissingValue.equals( val )) {
-					
-					System.out.print( " ,[(d) " + key + ":MISSING]" );
+				if (schema_column.transform == TimeseriesSchemaColumn.TransformType.SKIP) {
 					
 				} else {
-				*/
-//					System.out.print( " ,[(d) " + key + ":" + val + " => " + transformedValue + "]" );
-				//}
-								
+				
+					String val = generalDescriptorTreeMap.get( key );
+					
+					double transformedValue = schema_column.transformColumnValue( val );
+					System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
+					
+					dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
+					columnIndex++;
+					
+				}
+				
 				
 			}
+			
+			
+			
+			
+			
+			
+			
+			//System.out.println( "]" );
+			System.out.println("[Delta-T]:" + deltaT );
+
 			
 			// now do the timeseries columns
 			
@@ -650,6 +670,7 @@ public class PhysioNet_Vectorizer {
 				
 					String val = valuesAtTimestamp.get(key);
 //					System.out.print( " ,[ " + key + ":SKIP]" );
+					System.out.println( "[" + key + ":" + val + " => SKIP]"  );
 					
 					
 //				} else if (schema_column.columnTemporalType == TimeseriesSchemaColumn.ColumnTemporalType.DESCRIPTOR) {
@@ -659,19 +680,23 @@ public class PhysioNet_Vectorizer {
 					
 				} else {
 
-					// does this column exist for this timestep?
-				//	if (valuesAtTimestamp.containsKey(key) ) {
-						
 						String val = valuesAtTimestamp.get(key);
 						
 						double transformedValue = schema_column.transformColumnValue( val );
 						
-	//					System.out.print( " ,[(t) " + key + ": " + val + " => " + transformedValue + "]" );
+						System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
 						
-				//	} else {
-				//		System.out.print( " ,[(t) " + key + ":null" + "]" );
-				//	}
-					
+						params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
+						//System.out.println( "Timestep Pass -------------------------- " );
+						//System.out.println( "Timestep: " + timeStepIndex );
+						//System.out.println( "Current Params: " + params[0] + ", " + params[1] + ", " + params[2] );
+						
+						dstInput.putScalar( params, transformedValue );
+						
+						//dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
+						columnIndex++;
+						
+						
 				}
 				
 				
@@ -679,13 +704,52 @@ public class PhysioNet_Vectorizer {
 				
 			}
 			
-	//		System.out.println( "[end]" );
+			System.out.println( "[end]" );
 			
 			// now put the vector into the input array for this timestep
 			
+			timeStepIndex++;
 			
-		}		
+		} // for
 		
+		
+		
+		
+	}
+	
+	public static void debug3D_Nd4J_Input( INDArray dstInput, int miniBatchCount, int columnCount, int timeStepCount) {
+		
+		System.out.println( "Debugging Input of ND4J 3d Matrix -------" );
+		
+		for ( int miniBatchIndex = 0; miniBatchIndex < miniBatchCount; miniBatchIndex++) {
+		
+			System.out.println( "Mini-Batch Index: " + miniBatchIndex );
+			
+			for ( int timeStepIndex = 0; timeStepIndex < timeStepCount; timeStepIndex++) {
+				
+				System.out.print( "[timestep: " + timeStepIndex + "] " );
+				
+				for ( int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+				
+				
+
+					int[] params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
+					
+					double v = dstInput.getDouble( params );
+					
+					System.out.print( ", " + v );
+					
+					
+				}
+				
+				System.out.println("");
+				
+			}
+			
+		
+		}
+		
+		System.out.println( "Debugging Input of ND4J 3d Matrix -------" );
 		
 	}
 	

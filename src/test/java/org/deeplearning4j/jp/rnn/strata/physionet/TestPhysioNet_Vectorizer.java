@@ -9,6 +9,8 @@ import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
 import org.junit.Test;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 
 public class TestPhysioNet_Vectorizer {
 
@@ -70,7 +72,7 @@ public class TestPhysioNet_Vectorizer {
 		vec.collectStatistics();
 		vec.schema.computeDatasetStatistics();
 
-		vec.extractFileContentsAndVectorize( "/tmp/set-a/140505.txt", 1, 1, null, null);
+		//vec.extractFileContentsAndVectorize( "/tmp/set-a/140505.txt", 1, 1, null, null);
 		
 		vec.schema.debugPrintDatasetStatistics();
 		
@@ -85,6 +87,9 @@ public class TestPhysioNet_Vectorizer {
    @ATTRIBUTE alp		NUMERIC TIMESERIES		!NORMALIZE !PAD_TAIL_WITH_ZEROS
 		
  */
+		
+		
+
 		
 		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
 		vec.loadSchema();
@@ -108,8 +113,16 @@ public class TestPhysioNet_Vectorizer {
 	//	vec.schema.debugPrintDatasetStatistics();		
 		vec.schema.debugPrintDatasetStatistics();
 		
-		vec.extractFileContentsAndVectorize( "src/test/resources/physionet_sample_data.txt", 1, 1, null, null);
+		System.out.println( "ND4J Input Size: " );
+		System.out.println( "Minibatch: 1" );
+		System.out.println( "Column Count: " + (vec.schema.getTransformedVectorSize() + 1) );
+		System.out.println( "Timestep Count: " + 2 );
 		
+		INDArray input = Nd4j.zeros(new int[]{ 1, vec.schema.getTransformedVectorSize() + 1, 2 });
+		
+		vec.extractFileContentsAndVectorize( "src/test/resources/physionet_sample_data.txt", 0, vec.schema.getTransformedVectorSize() + 1, 2, input, null);
+		
+		PhysioNet_Vectorizer.debug3D_Nd4J_Input( input, 1, vec.schema.getTransformedVectorSize() + 1, 2 );
 
 		
 	}

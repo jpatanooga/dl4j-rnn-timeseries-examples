@@ -365,9 +365,16 @@ public class TimeseriesSchemaColumn {
 
 	//	System.out.println( "\nInput: " + inputColumnValue );
 		
+		
 		if ( null == inputColumnValue ) {
 			
+			
 			inputColumnValue = this.generatePaddingStrategyValue(); //.generateDefaultValue();
+			
+			// short circuit and kick out in case we try and normalize this
+			if (ColumnTimeseriesPaddingStrategyType.PAD_TAIL_WITH_ZEROS == this.paddingStrategy) {
+				return 0.0;
+			}
 			
 		} else {
 		
