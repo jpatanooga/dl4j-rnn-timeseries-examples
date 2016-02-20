@@ -39,6 +39,8 @@ public class PhysioNet_Vectorizer {
 	String labelFilePath = "";
 	
 	public PhysioNet_CSVSchema schema = null;
+	PhysioNetLabels labels = new PhysioNetLabels();
+	
 	
 	public int minNumberTimeseriesEntriesForPatientRecord = 100; // think better about this
 	public int maxNumberTimeseriesEntriesForPatientRecord = 0;
@@ -73,6 +75,8 @@ public class PhysioNet_Vectorizer {
 	
 	public void loadLabels() {
 		
+		// labels.load( "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
+		labels.load( this.labelFilePath );
 		
 		
 	}
@@ -505,6 +509,8 @@ public class PhysioNet_Vectorizer {
 	 */
 	public void extractFileContentsAndVectorize(String filepath, int miniBatchIndex, int columnCount, int timeStepLength, INDArray dstInput, INDArray dstLabels) {
 		
+		
+		
 		Map<Integer, Map<String, String>> timestampTreeMap = new TreeMap< Integer, Map<String, String> >();
 		Map<String, String> generalDescriptorTreeMap = new HashMap<>();
 		
@@ -723,6 +729,20 @@ public class PhysioNet_Vectorizer {
 			
 		} // for
 		
+		
+		// now handle labels
+		
+		String patientID = generalDescriptorTreeMap.get("recordid");
+		
+		System.out.println( "Looking up label for patient ID: " + patientID );
+		
+		// what is the label?
+		int labelPositiveColumnIndex = this.labels.translateLabelEntry(patientID);
+		
+		// for that index, put a 1
+		
+		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex };
+		dstLabels.putScalar( label_params, 1 );
 		
 		
 		

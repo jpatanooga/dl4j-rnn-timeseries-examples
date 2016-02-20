@@ -54,6 +54,8 @@ public class TestPhysioNet_Vectorizer {
 		
 		assertEquals( 0, labels.translateLabelEntry("132811") );
 		
+		System.out.println( "Label for 135361: " + labels.translateLabelEntry("135361") );
+		
 	}
 	
 	@Test
@@ -88,8 +90,9 @@ public class TestPhysioNet_Vectorizer {
 	@Test
 	public void testVectorizeFile() {
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
 		vec.loadSchema();
+		vec.loadLabels();
 
 		vec.collectStatistics();
 		vec.schema.computeDatasetStatistics();
@@ -113,8 +116,9 @@ public class TestPhysioNet_Vectorizer {
 		
 
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
 		vec.loadSchema();
+		vec.loadLabels();
 		
 		assertEquals( "-1", vec.schema.customValueForMissingValue );
 		
@@ -149,6 +153,11 @@ public class TestPhysioNet_Vectorizer {
 		
 		PhysioNet_Vectorizer.debug3D_Nd4J_Input( input, 1, vec.schema.getTransformedVectorSize() + 1, 2 );
 
+		
+		double labelNegativeLabelValue = labels.getDouble(0, 0);
+		double labelPositiveLabelValue = labels.getDouble(0, 1);
+		assertEquals( 0.0, labelNegativeLabelValue, 0.0 );
+		assertEquals( 1.0, labelPositiveLabelValue, 0.0 );
 		
 	}
 
