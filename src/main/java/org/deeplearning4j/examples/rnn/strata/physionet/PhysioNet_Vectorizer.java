@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.math3.util.Pair;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.PhysioNet_CSVSchema;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
@@ -35,6 +36,7 @@ public class PhysioNet_Vectorizer {
 	String currentPatientFile = null;
 	String columnDelimiter = ",";
 	String schemaPath = "";
+	String labelFilePath = "";
 	
 	public PhysioNet_CSVSchema schema = null;
 	
@@ -48,11 +50,13 @@ public class PhysioNet_Vectorizer {
 	public int outOfOrderTimestampCount = 0;
 	
 	
-	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath) {
+	
+	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath, String labels_file_path) {
 		
 		this.srcDir = srcDirectory;
 		this.schema = new PhysioNet_CSVSchema( );
 		this.schemaPath = schemaPath;
+		this.labelFilePath = labels_file_path;
 		
 	}
 	
@@ -67,6 +71,13 @@ public class PhysioNet_Vectorizer {
 		
 	}
 	
+	public void loadLabels() {
+		
+		
+		
+	}
+	
+
 	/**
 	 * The purpose of collecting summary statistics for PhysioNet is to 
 	 * 

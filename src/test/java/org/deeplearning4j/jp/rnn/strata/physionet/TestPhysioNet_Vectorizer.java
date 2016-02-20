@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNetLabels;
 import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
 import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
@@ -14,12 +15,14 @@ import org.nd4j.linalg.factory.Nd4j;
 
 public class TestPhysioNet_Vectorizer {
 
+	// need to auto-download:
+	// https://www.physionet.org/challenge/2012/Outcomes-a.txt
 
 	@Test
 	public void testScanDirectory() {
 		
 		//PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/data/physionet/sample/set-a/", "src/test/resources/physionet_schema.txt" );
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
 		vec.loadSchema();
 
 		vec.collectStatistics();
@@ -33,11 +36,30 @@ public class TestPhysioNet_Vectorizer {
 
 	}
 
+	@Test
+	public void testLabelParsing() {
+		
+		
+		PhysioNetLabels labels = new PhysioNetLabels();
+		labels.load( "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
+		
+    	// Cols per patient: { survival_days, length_stay_days, in_hospital_death }
+		
+		Map<String, Integer> patientMap = labels.getPatientData( "132567" );
+		assertEquals( 7, patientMap.get("length_stay_days").intValue() );
+		assertEquals( -1, patientMap.get("survival_days").intValue() );
+		assertEquals( 0, patientMap.get("in_hospital_death").intValue() );
+		
+		assertEquals( 1, labels.translateLabelEntry("132567") );
+		
+		assertEquals( 0, labels.translateLabelEntry("132811") );
+		
+	}
 	
 	@Test
 	public void testSchemaLoad() {
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
 		//vec.collectStatistics();
 		vec.loadSchema();
 		vec.schema.debugPrintDatasetStatistics();
@@ -66,7 +88,7 @@ public class TestPhysioNet_Vectorizer {
 	@Test
 	public void testVectorizeFile() {
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
 		vec.loadSchema();
 
 		vec.collectStatistics();
@@ -91,7 +113,7 @@ public class TestPhysioNet_Vectorizer {
 		
 
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
 		vec.loadSchema();
 		
 		assertEquals( "-1", vec.schema.customValueForMissingValue );
@@ -119,8 +141,11 @@ public class TestPhysioNet_Vectorizer {
 		System.out.println( "Timestep Count: " + 2 );
 		
 		INDArray input = Nd4j.zeros(new int[]{ 1, vec.schema.getTransformedVectorSize() + 1, 2 });
+		// 1 == mini-batch size
+		// 2 == number of classes (0 -> no survive, 1 -> survival)
+		INDArray labels = Nd4j.zeros(new int[]{ 1, 2 });
 		
-		vec.extractFileContentsAndVectorize( "src/test/resources/physionet_sample_data.txt", 0, vec.schema.getTransformedVectorSize() + 1, 2, input, null);
+		vec.extractFileContentsAndVectorize( "src/test/resources/physionet_sample_data.txt", 0, vec.schema.getTransformedVectorSize() + 1, 2, input, labels);
 		
 		PhysioNet_Vectorizer.debug3D_Nd4J_Input( input, 1, vec.schema.getTransformedVectorSize() + 1, 2 );
 
@@ -134,7 +159,7 @@ public class TestPhysioNet_Vectorizer {
 		String csvLine = "00:00,RecordID,135361";
 		String[] columns = csvLine.split( "," );
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt");
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
 		
 		assertEquals( true, vec.isRecordGeneralDescriptor(columns, vec.schema) );
 		
