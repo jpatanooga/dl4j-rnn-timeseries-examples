@@ -15,12 +15,8 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 
 import org.deeplearning4j.datasets.iterator.DataSetIterator;
-import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
-import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
-import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
-import org.nd4j.linalg.factory.Nd4j;
 
 public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	//private static final long serialVersionUID = -7287833919126626356L;
