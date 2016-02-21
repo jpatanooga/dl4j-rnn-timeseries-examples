@@ -1,6 +1,7 @@
 package org.deeplearning4j.examples.rnn.strata.physionet;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -78,6 +79,19 @@ public class PhysioNet_Vectorizer {
 		// labels.load( "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
 		labels.load( this.labelFilePath );
 		
+		
+	}
+	
+	public String getFilenameForIndex(int index) {
+		
+		// this.listOfFilesToVectorize
+    	if (this.listOfFilesToVectorize[ index ].isFile()) {
+    		
+    		return this.listOfFilesToVectorize[ index ].getName();
+    		
+    	}
+		
+    	return null;
 		
 	}
 	
@@ -424,9 +438,13 @@ public class PhysioNet_Vectorizer {
 		
 		int timestepCount = this.maxNumberTimeSteps; // 3rd dimension in matrix
 		
+		// featuresMask = Nd4j.ones(featureList.size(),longestTimeSeries);
 		
 		INDArray input = Nd4j.zeros(new int[]{ miniBatchSize, columnCount, timestepCount } );
+		INDArray inputMask = Nd4j.zeros( new int[]{ miniBatchSize, columnCount, timestepCount } );
+
 		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, 2 } );
+		INDArray labelsMask = Nd4j.ones(new int[]{ miniBatchSize, 2 } ); // labels are always used
 		
 		int targetEndingIndex = miniBatchSize + currentMiniBatchOffset;
 		
@@ -453,7 +471,7 @@ public class PhysioNet_Vectorizer {
 	    		//this.scanFileForStatistics( tmpPath );
 	    		
 	    		System.out.println( ">>" + fileIndex + " of " + targetEndingIndex + " -> " + tmpPath );
-	    		this.extractFileContentsAndVectorize( tmpPath, matrixMiniBatchTmpIndex, columnCount, timestepCount, input, labels );
+	    		this.extractFileContentsAndVectorize( tmpPath, matrixMiniBatchTmpIndex, columnCount, timestepCount, input, inputMask, labels, labelsMask );
 	    		matrixMiniBatchTmpIndex++;
 	    	
 	    	} else if (this.listOfFilesToVectorize[ fileIndex ].isDirectory()) {
@@ -480,7 +498,7 @@ public class PhysioNet_Vectorizer {
 		*/
 
 		
-		return new DataSet( input, labels );
+		return new DataSet( input, labels, inputMask, labelsMask );
 		
 	}
 	
@@ -551,7 +569,7 @@ public class PhysioNet_Vectorizer {
 	 * @param dstInput
 	 * @param dstLabels
 	 */
-	public void extractFileContentsAndVectorize(String filepath, int miniBatchIndex, int columnCount, int timeStepLength, INDArray dstInput, INDArray dstLabels) {
+	public void extractFileContentsAndVectorize(String filepath, int miniBatchIndex, int columnCount, int timeStepLength, INDArray dstInput, INDArray dstInputMask, INDArray dstLabels, INDArray dstLabelsMask) {
 		
 		
 		
@@ -680,6 +698,7 @@ public class PhysioNet_Vectorizer {
 		//	System.out.println( "Timestep: " + timeStepIndex );
 //			System.out.println( "TS-Delta Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 			dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, deltaT );
+			dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
 			columnIndex++;
 			
 			
@@ -703,6 +722,7 @@ public class PhysioNet_Vectorizer {
 //					System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
 //					System.out.println( "Descriptor Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 					dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
+					dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
 					columnIndex++;
 					
 				}
@@ -747,6 +767,7 @@ public class PhysioNet_Vectorizer {
 						//System.out.println( "Current Params: " + params[0] + ", " + params[1] + ", " + params[2] );
 						
 						dstInput.putScalar( params, transformedValue );
+						dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
 						
 						//dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
 						columnIndex++;
@@ -824,6 +845,42 @@ public class PhysioNet_Vectorizer {
 		
 	}
 	
+	public static void log_debug3D_Nd4J_Input( BufferedWriter writer, INDArray dstInput, int miniBatchCount, int columnCount, int timeStepCount) throws IOException {
+		
+		writer.write( "Debugging Input of ND4J 3d Matrix -------\n" );
+		
+		for ( int miniBatchIndex = 0; miniBatchIndex < miniBatchCount; miniBatchIndex++) {
+		
+			writer.write( "Mini-Batch Index: " + miniBatchIndex + "\n" );
+			
+			for ( int timeStepIndex = 0; timeStepIndex < timeStepCount; timeStepIndex++) {
+				
+				writer.write( "[timestep: " + timeStepIndex + "] " );
+				
+				for ( int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+				
+				
+
+					int[] params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
+					
+					double v = dstInput.getDouble( params );
+					
+					writer.write( ", " + v );
+					
+					
+				}
+				
+				writer.write("\n");
+				
+			}
+			
+		
+		}
+		
+		writer.write( "END Debugging Input of ND4J 3d Matrix -------\n" );
+		
+	}	
+	
 	public static void debugTreeMapData(Map<Integer, Map<String, String>> timestampTreeMap) {
 		
 		for (Map.Entry<Integer, Map<String, String>> entry : timestampTreeMap.entrySet()) {
@@ -831,6 +888,90 @@ public class PhysioNet_Vectorizer {
 			System.out.println(entry.getKey() + " => " + entry.getValue());
 			
 		}		
+		
+		
+	}
+	
+	public void logTreeMapData(BufferedWriter writer, String filepath) throws IOException {
+
+		Map<Integer, Map<String, String>> timestampTreeMap = new TreeMap< Integer, Map<String, String> >();
+		Map<String, String> generalDescriptorTreeMap = new HashMap<>();
+		
+		// Pass 1: scan and sort all the timestamped entries --- we cant be sure they are ordered!
+		try (BufferedReader br = new BufferedReader(new FileReader( filepath ) ) ) {
+		    String csvLine;
+		    
+		    int descriptorLineCount = 0;
+		    int timeseriesLineCount = 0;
+		   // Map<String, Integer> timeStepMap = new LinkedHashMap<>();
+		    
+		    
+		    while ((csvLine = br.readLine()) != null) {
+		       // process the line.
+		    	
+				// open the file
+		    	//String csvLine = value.toString();
+		    	String[] columns = csvLine.split( columnDelimiter );
+		    	
+		    	
+		    	if ( isRecordGeneralDescriptor(columns, this.schema) ) {
+		    		
+		    		 //this.schema.evaluateInputRecord( csvLine );
+		    		 //descriptorLineCount++;
+		    		
+		    		generalDescriptorTreeMap.put( columns[1].trim().toLowerCase(), columns[2].trim() );
+		    		
+		    	} else if ( isHeader(columns) ) {
+		    		
+		    		
+		    	} else {
+		    		
+		    		//this.schema.evaluateInputRecord( csvLine );
+		    		timeseriesLineCount++;
+
+		    		
+		    		// now deal with a timeseries line
+		    		
+					String timeslot = columns[ 0 ].trim();
+					
+					// now for each timestep, order the data
+					int curTimeSlot = parseElapsedTimeForVisitInTotalMinutes( timeslot );
+					
+					if (timestampTreeMap.containsKey(curTimeSlot)) {
+						
+						// already exists, add to it
+						Map<String, String> tmpMap = timestampTreeMap.get(curTimeSlot);
+						tmpMap.put( columns[ 1 ].trim().toLowerCase(), columns[ 2 ].trim() );
+						
+					} else {
+						
+						// add new one
+						Map<String, String> tmpMap = new HashMap<String, String>();
+						tmpMap.put( columns[ 1 ].trim().toLowerCase(), columns[ 2 ].trim() );
+						timestampTreeMap.put( curTimeSlot, tmpMap );
+						
+					}
+					
+		    		
+		    		
+		    	}
+		    	
+		    } // while
+		    	
+	    } catch (Exception e ) {
+	    	
+	    }
+		
+		
+	    writer.write( "Debug of Timestep Aligned data: \n" );
+		
+		for (Map.Entry<Integer, Map<String, String>> entry : timestampTreeMap.entrySet()) {
+			  
+			writer.write(entry.getKey() + " => " + entry.getValue() + "\n");
+			
+		}		
+		
+		writer.write( " ------- End Debug of Timestep Aligned data ---------- \n\n" );
 		
 		
 	}

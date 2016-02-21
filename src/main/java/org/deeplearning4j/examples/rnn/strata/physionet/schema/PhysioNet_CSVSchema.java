@@ -1,7 +1,9 @@
 package org.deeplearning4j.examples.rnn.strata.physionet.schema;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -1013,6 +1015,221 @@ public class PhysioNet_CSVSchema {
 		System.out.println("End Print Schema --------\n\n");
 
 	}
+	
+	public void logDatasetStatistics(BufferedWriter writer) throws IOException {
+
+		writer.write("Print Schema --------\n");
+		
+		this.debugPrintRogueColumns();
+		
+		writer.write("\n\n> Descriptor Columns: \n");
+
+		for (Map.Entry<String, TimeseriesDescriptorSchemaColumn> entry : this.descriptorColumnSchemas.entrySet()) {
+
+			String key = entry.getKey();
+			TimeseriesDescriptorSchemaColumn value = entry.getValue();
+
+		  // now work with key and value...
+
+			writer.write("> " + value.name + ", " + value.columnType + ", " + value.columnTemporalType + ", " + value.transform + "\n");
+
+		  if ( value.transform == TransformType.LABEL ) {
+
+			  writer.write("\t> Label > Class Balance Report \n");
+			  
+			  int totalLabels = 0;
+			  boolean printedSkipMessage = false;
+
+			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
+
+				  // || totalLabels > value.recordLabels.size() - 10
+//				  if (totalLabels < 10 ) {
+				  
+			  	// value.recordLabels.size()
+				  writer.write("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond() + "\n");
+
+					  
+/*					  
+				  } else if (!printedSkipMessage) {
+					  
+					  System.out.println( "[ skipping some labels ... ]" );
+					  printedSkipMessage = true;
+					  
+				  }
+				  */
+				  
+				  totalLabels += label.getValue().getSecond();
+			  	
+			  }
+			  
+			  writer.write("\t\tTotal Labels: " + totalLabels + "\n");
+			  
+			  writer.write("\t\tMissed Label Lookups: " + value.missedLabelLookups + "\n");
+			  
+			  writer.write("\t\tTotal Values Seen: " + value.count + "\n");
+
+		  } else if ( value.columnType == ColumnType.NOMINAL ) {
+			  
+			  writer.write("\t> Nominal > Category Balance Report \n");
+			  
+			  int totalCategories = 0;
+			  boolean printedSkipMessage = false;
+
+			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
+
+				  
+				  if (totalCategories < 10  || totalCategories > value.recordLabels.size() - 10) {
+
+			  	// value.recordLabels.size()
+					  writer.write("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond() + "\n");
+					  
+				  } else if (!printedSkipMessage) {
+					  
+					  writer.write( "[ skipping some labels ... ]\n" );
+					  printedSkipMessage = true;
+					  
+				  }
+
+			  	totalCategories += label.getValue().getSecond();
+			  	
+			  }
+			  
+			  writer.write("\t\tTotal Categories: " + totalCategories + "\n");
+			  
+			  writer.write("\t\tMissed Category Lookups: " + value.missedLabelLookups + "\n");				  
+			  
+			  writer.write("\t\tTotal Values Seen: " + value.count + "\n");
+			  writer.write("\t\tMissing Values: " + value.missingValues + "\n");
+			  
+		  } else {
+
+			  writer.write("\t\tmin: " + value.minValue + "\n");
+			  writer.write("\t\tmax: " + value.maxValue + "\n");
+			  writer.write("\t\tsum: " + value.sum + "\n");
+			  writer.write("\t\tcount: " + value.count + "\n");
+			  writer.write("\t\tavg: " + value.avg + "\n");
+			  writer.write("\t\tvariance: " + value.variance + "\n");
+			  writer.write("\t\tstddev: " + value.stddev + "\n");
+			  writer.write("\t\tmissing values: " + value.missingValues + "\n");
+			  writer.write("\t\tmissing values strategy: " + value.missingValStrategy + "\n");
+			  writer.write("\t\tmissing values replacement: " + value.customMissingValueReplacementValue + "\n" );
+			    
+
+		    }
+
+		}
+		
+		
+		
+		
+		
+		
+		
+		writer.write("\n\n> Timeseries Columns: \n");
+
+		for (Map.Entry<String, TimeseriesSchemaColumn> entry : this.timeseriesColumnSchemas.entrySet()) {
+
+			String key = entry.getKey();
+			TimeseriesSchemaColumn value = entry.getValue();
+
+		  // now work with key and value...
+
+			writer.write("> " + value.name + ", " + value.columnType + ", " + value.columnTemporalType + ", " + value.transform + "\n");
+
+		  if ( value.transform == TransformType.LABEL ) {
+
+			  writer.write("\t> Label > Class Balance Report \n");
+			  
+			  int totalLabels = 0;
+			  boolean printedSkipMessage = false;
+
+			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
+
+				  // || totalLabels > value.recordLabels.size() - 10
+//				  if (totalLabels < 10 ) {
+				  
+			  	// value.recordLabels.size()
+				  writer.write("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond() + "\n");
+
+					  
+/*					  
+				  } else if (!printedSkipMessage) {
+					  
+					  System.out.println( "[ skipping some labels ... ]" );
+					  printedSkipMessage = true;
+					  
+				  }
+				  */
+				  
+				  totalLabels += label.getValue().getSecond();
+			  	
+			  }
+			  
+			  writer.write("\t\tTotal Labels: " + totalLabels + "\n");
+			  
+			  writer.write("\t\tMissed Label Lookups: " + value.missedLabelLookups + "\n");
+			  
+			  writer.write("\t\tTotal Values Seen: " + value.count + "\n");
+
+		  } else if ( value.columnType == ColumnType.NOMINAL ) {
+			  
+			  writer.write("\t> Nominal > Category Balance Report \n");
+			  
+			  int totalCategories = 0;
+			  boolean printedSkipMessage = false;
+
+			  for (Map.Entry<String, Pair<Integer,Integer>> label : value.recordLabels.entrySet()) {
+
+				  
+				  if (totalCategories < 10  || totalCategories > value.recordLabels.size() - 10) {
+
+			  	// value.recordLabels.size()
+					  writer.write("\t\t " + label.getKey() + ": " + label.getValue().getFirst() + ", " + label.getValue().getSecond() + "\n");
+					  
+				  } else if (!printedSkipMessage) {
+					  
+					  writer.write( "[ skipping some labels ... ]"
+					  		+ "\n" );
+					  printedSkipMessage = true;
+					  
+				  }
+
+			  	totalCategories += label.getValue().getSecond();
+			  	
+			  }
+			  
+			  writer.write("\t\tTotal Categories: " + totalCategories + "\n");
+			  
+			  writer.write("\t\tMissed Category Lookups: " + value.missedLabelLookups + "\n");				  
+			  
+			  writer.write("\t\tTotal Values Seen: " + value.count + "\n");
+			  writer.write("\t\tMissing Values: " + value.missingValues + "\n");
+			  
+		  } else {
+
+			  writer.write("\t\tmin: " + value.minValue + "\n");
+			  writer.write("\t\tmax: " + value.maxValue + "\n");
+			  writer.write("\t\tsum: " + value.sum + "\n");
+			  writer.write("\t\tcount: " + value.count + "\n");
+			  writer.write("\t\tavg: " + value.avg + "\n");
+			  writer.write("\t\tvariance: " + value.variance + "\n");
+			  writer.write("\t\tstddev: " + value.stddev + "\n");
+			  writer.write("\t\tmissing values: " + value.missingValues + "\n");
+			    //System.out.println("\t\tmissing values strategy: " + value.missingValStrategy);
+			    //System.out.println("\t\tmissing values replacement: " + value.customMissingValueReplacementValue );
+			    
+
+		    }
+
+		}		
+		
+		
+		
+		
+
+		writer.write("End Print Schema --------\n\n");
+
+	}	
 
 	public void debugPrintColumns() {
 
@@ -1036,5 +1253,32 @@ public class PhysioNet_CSVSchema {
 
 	}
 	
+	public void logColumns(BufferedWriter writer) throws IOException {
+
+		writer.write("Columns: ");
+		
+		for (Map.Entry<String, TimeseriesDescriptorSchemaColumn> entry : this.descriptorColumnSchemas.entrySet()) {
+
+			String key = entry.getKey();
+			TimeseriesDescriptorSchemaColumn value = entry.getValue();
+
+			//value.debugPrintColumns();
+			writer.write( key + " ");
+			
+		}
+		
+		for (Map.Entry<String, TimeseriesSchemaColumn> entry : this.timeseriesColumnSchemas.entrySet()) {
+
+			String key = entry.getKey();
+			TimeseriesSchemaColumn value = entry.getValue();
+
+			//value.debugPrintColumns();
+			writer.write( key + " ");
+
+		}
+		
+		writer.write( "\n");
+
+	}	
 	
 }

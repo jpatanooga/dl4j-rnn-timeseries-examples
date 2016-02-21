@@ -2,7 +2,12 @@ package org.deeplearning4j.jp.rnn.strata.physionet;
 
 import static org.junit.Assert.*;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_ICU_Mortality_Iterator;
 import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
@@ -104,6 +109,58 @@ public class TestPhysioNet_Iterator {
 
 		
 	}
+	
+	@Test
+	public void testIteratorCheckSmallMiniBatch() throws IOException {
+		
+		
+		
+		BufferedWriter writer = null;
+        try {
+            //create a temporary file
+            String timeLog = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            File logFile = new File("/tmp/rnn_physionet_" + timeLog + ".txt");
+
+            // This will output the full path where the file will be written to...
+            System.out.println(logFile.getCanonicalPath());
+            writer = new BufferedWriter(new FileWriter(logFile));
+            //writer.write("Hello world!");
+
+		
+		
+		
+		
+		PhysioNet_ICU_Mortality_Iterator iterator = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", 1, 1);
+
+		iterator.vectorizer.schema.logColumns(writer);
+		
+		//while (iterator.hasNext()) {
+			
+			DataSet d = iterator.next();
+			System.out.println( "> Pulled Dataset ... ");
+			
+		//}
+			
+		PhysioNet_Vectorizer.log_debug3D_Nd4J_Input( writer, d.getFeatures(), 1, 43, 202 );
+			
+		writer.write( "\n\n> Mask Array: \n\n");
+		
+		PhysioNet_Vectorizer.log_debug3D_Nd4J_Input( writer, d.getFeaturesMaskArray(), 1, 43, 202 );
+		
+		System.out.println( "> [ done ] ");
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            // Close the writer regardless of what happens...
+            writer.close();
+        } catch (Exception e) {
+        }
+    }		
+		
+		
+	}	
 	
 	
 

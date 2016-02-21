@@ -39,7 +39,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	String datasetInputPath = "";
 	String datasetSchemaPath = "";
 	String datasetLabelsPath = "";
-	PhysioNet_Vectorizer vectorizer = null;
+	public PhysioNet_Vectorizer vectorizer = null;
 	
 	public PhysioNet_ICU_Mortality_Iterator(String dataInputPath, String datasetSchemaPath, String datasetLabels, int miniBatchSize, int totalExamples ) throws IOException {
 	//	this(path,Charset.defaultCharset(),miniBatchSize,exampleSize,numExamplesToFetch,getDefaultCharacterSet(), new Random(),true);
