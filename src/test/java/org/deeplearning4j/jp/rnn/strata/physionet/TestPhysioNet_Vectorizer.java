@@ -168,7 +168,10 @@ public class TestPhysioNet_Vectorizer {
 		String csvLine = "00:00,RecordID,135361";
 		String[] columns = csvLine.split( "," );
 		
-		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
+		//PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt" );
+		vec.loadSchema();
+		//vec.schema.debugPrintDatasetStatistics();
 		
 		assertEquals( true, vec.isRecordGeneralDescriptor(columns, vec.schema) );
 		

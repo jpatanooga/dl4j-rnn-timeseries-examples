@@ -51,7 +51,7 @@ public class PhysioNet_Vectorizer {
 	public int lastKnownTimestamp = 0;
 	public int outOfOrderTimestampCount = 0;
 	
-	
+	public File[] listOfFilesToVectorize = null;
 	
 	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath, String labels_file_path) {
 		
@@ -109,6 +109,8 @@ public class PhysioNet_Vectorizer {
 		}
 		
 		File[] listOfFiles = folder.listFiles();
+		this.listOfFilesToVectorize = listOfFiles; // laziness
+		
 		
 		 System.out.println( "Found Files: " + listOfFiles.length + "\n" );
 
@@ -394,6 +396,13 @@ public class PhysioNet_Vectorizer {
 		return (60 * iHours) + iMinutes;
 	}
 	
+	private String getRelativeFilepathForMiniBatchOffset(int miniBatchOffset) {
+		
+		
+		
+		return "";
+	}
+	
 	/**
 	 * Mini-batch size: 
 	 * 		number of patients in a batch
@@ -404,12 +413,12 @@ public class PhysioNet_Vectorizer {
 	 * 		-	how do we handle labels?
 	 * 
 	 */
-	public DataSet generateNextTimeseriesVectorMiniBatch(int miniBatchSize) {
+	public DataSet generateNextTimeseriesVectorMiniBatch(int miniBatchSize, int currentMiniBatchOffset, int columnCount) {
 
 		// minibatch size is the 1st dimension in the matrix, which we get as a parameter
 		// do we have enough files left in our directory to give a full mini-batch? check for this
 
-		int columnCount = this.calculateTotalOutputColumnCount(); // 2nd dimension in matrix --- every column in the schema that is not !SKIP
+		//int columnCount = this.calculateTotalOutputColumnCount(); // 2nd dimension in matrix --- every column in the schema that is not !SKIP
 		
 		// what is the timestep count?
 		
@@ -417,10 +426,44 @@ public class PhysioNet_Vectorizer {
 		
 		
 		INDArray input = Nd4j.zeros(new int[]{ miniBatchSize, columnCount, timestepCount } );
-		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, columnCount, timestepCount } );
+		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, 2 } );
 		
+		int targetEndingIndex = miniBatchSize + currentMiniBatchOffset;
 		
+		int matrixMiniBatchTmpIndex = 0;
 		
+	    for (int fileIndex = currentMiniBatchOffset; fileIndex < targetEndingIndex; fileIndex++ ) {
+	    		//this.listOfFilesToVectorize.length; i++) {
+
+	    	if (this.listOfFilesToVectorize[ fileIndex ].isFile()) {
+	    	
+	    		// System.out.println("File: " + listOfFiles[i].getName() );
+	    		
+	    		String tmpPath = this.srcDir;
+	    		if (tmpPath.trim().endsWith("/")) {
+	    			
+	    			tmpPath += this.listOfFilesToVectorize[ fileIndex ].getName();
+	    			
+	    		} else {
+	    			
+	    			tmpPath += "/" + this.listOfFilesToVectorize[ fileIndex ].getName();
+	    			
+	    		}
+	    		
+	    		//this.scanFileForStatistics( tmpPath );
+	    		
+	    		System.out.println( ">>" + fileIndex + " of " + targetEndingIndex + " -> " + tmpPath );
+	    		this.extractFileContentsAndVectorize( tmpPath, matrixMiniBatchTmpIndex, columnCount, timestepCount, input, labels );
+	    		matrixMiniBatchTmpIndex++;
+	    	
+	    	} else if (this.listOfFilesToVectorize[ fileIndex ].isDirectory()) {
+	    	
+	    		//System.out.println("Directory: " + listOfFiles[i].getName());
+	    	
+	    	}
+	    	
+	    }		
+		/*
 		// for each mini-batch entry -> file
 		for ( int m = 0; m < miniBatchSize; m++) {
 
@@ -434,6 +477,7 @@ public class PhysioNet_Vectorizer {
 			
 			
 		}
+		*/
 
 		
 		return new DataSet( input, labels );
@@ -575,7 +619,7 @@ public class PhysioNet_Vectorizer {
 		    	
 		    }
 		    
-		    debugTreeMapData( timestampTreeMap );
+		//    debugTreeMapData( timestampTreeMap );
 		    
 		    
 		    
@@ -603,7 +647,7 @@ public class PhysioNet_Vectorizer {
 		
 		// Pass 2: vectorize the sortedMap Entries
 		
-		System.out.println("Debugging vectorization path ---------");
+	//	System.out.println("Debugging vectorization path ---------");
 		
 		//System.out.println( "length: " + dstInput.length() );
 		//System.out.println( "cols: " + dstInput.columns() );
@@ -632,15 +676,15 @@ public class PhysioNet_Vectorizer {
 
 			// write the delta timestamp in the first column
 			int[] params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
-			System.out.println( "Timestep Pass -------------------------- " );
-			System.out.println( "Timestep: " + timeStepIndex );
-			//System.out.println( "Current Params: " + params[0] + ", " + params[1] + ", " + params[2] );
+		//	System.out.println( "Timestep Pass -------------------------- " );
+		//	System.out.println( "Timestep: " + timeStepIndex );
+//			System.out.println( "TS-Delta Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 			dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, deltaT );
 			columnIndex++;
 			
 			
 			
-			System.out.print("[Delta-T]:" + deltaT +", Descriptors:[" );
+//			System.out.print("[Delta-T]:" + deltaT +", Descriptors:[" );
 			
 			// first set of columns: Descriptors
 			
@@ -656,8 +700,8 @@ public class PhysioNet_Vectorizer {
 					String val = generalDescriptorTreeMap.get( key );
 					
 					double transformedValue = schema_column.transformColumnValue( val );
-					System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
-					
+//					System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
+//					System.out.println( "Descriptor Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 					dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
 					columnIndex++;
 					
@@ -673,7 +717,7 @@ public class PhysioNet_Vectorizer {
 			
 			
 			//System.out.println( "]" );
-			System.out.println("[Delta-T]:" + deltaT );
+//			System.out.println("[Delta-T]:" + deltaT );
 
 			
 			// now do the timeseries columns
@@ -686,14 +730,8 @@ public class PhysioNet_Vectorizer {
 				if (schema_column.transform == TimeseriesSchemaColumn.TransformType.SKIP) {
 				
 					String val = valuesAtTimestamp.get(key);
-//					System.out.print( " ,[ " + key + ":SKIP]" );
-					System.out.println( "[" + key + ":" + val + " => SKIP]"  );
-					
-					
-//				} else if (schema_column.columnTemporalType == TimeseriesSchemaColumn.ColumnTemporalType.DESCRIPTOR) {
-					
-					//String val = valuesAtTimestamp.get(key);
-
+//					System.out.println( "[" + key + ":" + val + " => SKIP]"  );
+	
 					
 				} else {
 
@@ -701,8 +739,8 @@ public class PhysioNet_Vectorizer {
 						
 						double transformedValue = schema_column.transformColumnValue( val );
 						
-						System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
-						
+//						System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
+//						System.out.println( "TS Col Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 						params = new int[]{ miniBatchIndex, columnIndex, timeStepIndex };
 						//System.out.println( "Timestep Pass -------------------------- " );
 						//System.out.println( "Timestep: " + timeStepIndex );
@@ -721,7 +759,7 @@ public class PhysioNet_Vectorizer {
 				
 			}
 			
-			System.out.println( "[end]" );
+//			System.out.println( "[end]" );
 			
 			// now put the vector into the input array for this timestep
 			
@@ -734,12 +772,14 @@ public class PhysioNet_Vectorizer {
 		
 		String patientID = generalDescriptorTreeMap.get("recordid");
 		
-		System.out.println( "Looking up label for patient ID: " + patientID );
+	//	System.out.println( "Looking up label for patient ID: " + patientID );
 		
 		// what is the label?
 		int labelPositiveColumnIndex = this.labels.translateLabelEntry(patientID);
 		
 		// for that index, put a 1
+		
+	//	System.out.println( "label indexes: " + miniBatchIndex + ", " + labelPositiveColumnIndex );
 		
 		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex };
 		dstLabels.putScalar( label_params, 1 );

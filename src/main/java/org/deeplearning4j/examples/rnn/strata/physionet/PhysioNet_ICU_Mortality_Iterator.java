@@ -1,5 +1,7 @@
 package org.deeplearning4j.examples.rnn.strata.physionet;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -13,135 +15,57 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 
 import org.deeplearning4j.datasets.iterator.DataSetIterator;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesDescriptorSchemaColumn;
+import org.deeplearning4j.examples.rnn.strata.physionet.schema.TimeseriesSchemaColumn;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.factory.Nd4j;
 
 public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
-	private static final long serialVersionUID = -7287833919126626356L;
-	private static final int MAX_SCAN_LENGTH = 200; 
+	//private static final long serialVersionUID = -7287833919126626356L;
+	//private static final int MAX_SCAN_LENGTH = 200; 
 	//private char[] validCharacters;
-	private Map<Character,Integer> charToIdxMap;
-	private char[] fileCharacters;
-	private int exampleLength;
+	//private Map<Character,Integer> charToIdxMap;
+	// private char[] fileCharacters;
+	// private int exampleLength;
+	
 	private int miniBatchSize;
-	private int numExamplesToFetch;
-	private int examplesSoFar = 0;
-	private Random rng;
+	private int currentFileListIndex = 0;
+	private int totalExamples = 0;
+	
+	//private int numExamplesToFetch;
+	//private int examplesSoFar = 0;
+	//private Random rng;
 	//private final int numCharacters;
 	//private final boolean alwaysStartAtNewLine;
 	
-	public PhysioNet_ICU_Mortality_Iterator(String path, int miniBatchSize, int exampleSize, int numExamplesToFetch ) throws IOException {
+	String datasetInputPath = "";
+	String datasetSchemaPath = "";
+	String datasetLabelsPath = "";
+	PhysioNet_Vectorizer vectorizer = null;
+	
+	public PhysioNet_ICU_Mortality_Iterator(String dataInputPath, String datasetSchemaPath, String datasetLabels, int miniBatchSize, int totalExamples ) throws IOException {
 	//	this(path,Charset.defaultCharset(),miniBatchSize,exampleSize,numExamplesToFetch,getDefaultCharacterSet(), new Random(),true);
 		//this.numCharacters = 0; // fix
-	}
-	
-	/**
-	 * @param textFilePath Path to text file to use for generating samples
-	 * @param textFileEncoding Encoding of the text file. Can try Charset.defaultCharset()
-	 * @param miniBatchSize Number of examples per mini-batch
-	 * @param exampleLength Number of characters in each input/output vector
-	 * @param numExamplesToFetch Total number of examples to fetch (must be multiple of miniBatchSize). Used in hasNext() etc methods
-	 * @param validCharacters Character array of valid characters. Characters not present in this array will be removed
-	 * @param rng Random number generator, for repeatability if required
-	 * @param alwaysStartAtNewLine if true, scan backwards until we find a new line character (up to MAX_SCAN_LENGTH in case
-	 *  of no new line characters, to avoid scanning entire file)
-	 * @throws IOException If text file cannot  be loaded
-	 */
-//	public PhysioNet_ICU_Mortality_Iterator(String textFilePath, Charset textFileEncoding, int miniBatchSize, int exampleLength,
-//			int numExamplesToFetch, char[] validCharacters, Random rng, boolean alwaysStartAtNewLine ) throws IOException {
-		/*
-		if( !new File(textFilePath).exists()) throw new IOException("Could not access file (does not exist): " + textFilePath);
-		if(numExamplesToFetch % miniBatchSize != 0 ) throw new IllegalArgumentException("numExamplesToFetch must be a multiple of miniBatchSize");
-		if( miniBatchSize <= 0 ) throw new IllegalArgumentException("Invalid miniBatchSize (must be >0)");
-		this.validCharacters = validCharacters;
-		this.exampleLength = exampleLength;
+		
+		this.datasetInputPath = dataInputPath;
+		this.datasetSchemaPath = datasetSchemaPath;
+		this.datasetLabelsPath = datasetLabels;
+		
+		this.vectorizer = new PhysioNet_Vectorizer(this.datasetInputPath, this.datasetSchemaPath, this.datasetLabelsPath );
+		this.vectorizer.loadSchema();
+		this.vectorizer.loadLabels();
+		this.vectorizer.collectStatistics();
+
 		this.miniBatchSize = miniBatchSize;
-		this.numExamplesToFetch = numExamplesToFetch;
-		this.rng = rng;
-		this.alwaysStartAtNewLine = alwaysStartAtNewLine;
+		this.totalExamples = totalExamples;
 		
-		//Store valid characters is a map for later use in vectorization
-		charToIdxMap = new HashMap<>();
-		for( int i=0; i<validCharacters.length; i++ ) charToIdxMap.put(validCharacters[i], i);
-		numCharacters = validCharacters.length;
-		
-		//Load file and convert contents to a char[] 
-		boolean newLineValid = charToIdxMap.containsKey('\n');
-		List<String> lines = Files.readAllLines(new File(textFilePath).toPath(),textFileEncoding);
-		int maxSize = lines.size();	//add lines.size() to account for newline characters at end of each line 
-		for( String s : lines ) maxSize += s.length();
-		char[] characters = new char[maxSize];
-		int currIdx = 0;
-		for( String s : lines ){
-			char[] thisLine = s.toCharArray();
-			for( int i=0; i<thisLine.length; i++ ){
-				if( !charToIdxMap.containsKey(thisLine[i]) ) continue;
-				characters[currIdx++] = thisLine[i];
-			}
-			if(newLineValid) characters[currIdx++] = '\n';
-		}
-		
-		if( currIdx == characters.length ){
-			fileCharacters = characters;
-		} else {
-			fileCharacters = Arrays.copyOfRange(characters, 0, currIdx);
-		}
-		if( exampleLength >= fileCharacters.length ) throw new IllegalArgumentException("exampleLength="+exampleLength
-				+" cannot exceed number of valid characters in file ("+fileCharacters.length+")");
-		
-		int nRemoved = maxSize - fileCharacters.length;
-		System.out.println("Loaded and converted file: " + fileCharacters.length + " valid characters of "
-		+ maxSize + " total characters (" + nRemoved + " removed)");
-		
-		*/
-		
-//	}
-	
-	/** A minimal character set, with a-z, A-Z, 0-9 and common punctuation etc */
-/*	public static char[] getMinimalCharacterSet(){
-		List<Character> validChars = new LinkedList<>();
-		for(char c='a'; c<='z'; c++) validChars.add(c);
-		for(char c='A'; c<='Z'; c++) validChars.add(c);
-		for(char c='0'; c<='9'; c++) validChars.add(c);
-		char[] temp = {'!', '&', '(', ')', '?', '-', '\'', '"', ',', '.', ':', ';', ' ', '\n', '\t'};
-		for( char c : temp ) validChars.add(c);
-		char[] out = new char[validChars.size()];
-		int i=0;
-		for( Character c : validChars ) out[i++] = c;
-		return out;
-	}
-	*/
-	
-	/** As per getMinimalCharacterSet(), but with a few extra characters */
-/*	public static char[] getDefaultCharacterSet(){
-		List<Character> validChars = new LinkedList<>();
-		for(char c : getMinimalCharacterSet() ) validChars.add(c);
-		char[] additionalChars = {'@', '#', '$', '%', '^', '*', '{', '}', '[', ']', '/', '+', '_',
-				'\\', '|', '<', '>'};
-		for( char c : additionalChars ) validChars.add(c);
-		char[] out = new char[validChars.size()];
-		int i=0;
-		for( Character c : validChars ) out[i++] = c;
-		return out;
-	}
-	*/
-/*	
-	public char convertIndexToCharacter( int idx ){
-		return validCharacters[idx];
 	}
 	
-	public int convertCharacterToIndex( char c ){
-		return charToIdxMap.get(c);
-	}
 	
-	public char getRandomCharacter(){
-		return validCharacters[(int) (rng.nextDouble()*validCharacters.length)];
-	}
-*/
 	public boolean hasNext() {
-		return examplesSoFar + miniBatchSize <= numExamplesToFetch;
+		return currentFileListIndex + miniBatchSize <= this.totalExamples;
 	}
 
 	public DataSet next() {
@@ -159,7 +83,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	 */
 	public DataSet next(int miniBatchSize) {
 		
-		
+		/*
 		
 		if( examplesSoFar + miniBatchSize > numExamplesToFetch ) throw new NoSuchElementException();
 		//Allocate space:
@@ -174,14 +98,6 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 			int startIdx = (int) (rng.nextDouble()*maxStartIdx);
 			int endIdx = startIdx + exampleLength;
 			int scanLength = 0;
-			/*
-			if(alwaysStartAtNewLine){
-				while(startIdx >= 1 && fileCharacters[startIdx-1] != '\n' && scanLength++ < MAX_SCAN_LENGTH ){
-					startIdx--;
-					endIdx--;
-				}
-			}
-			*/
 			
 			int currCharIdx = charToIdxMap.get(fileCharacters[startIdx]);	//Current input
 			int c=0;
@@ -195,22 +111,59 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		
 		examplesSoFar += miniBatchSize;
 		return new DataSet(input,labels);
+		*/
+		
+		//int miniBatchSize = 50;
+		int columnCount = 0;
+		
+		
+		columnCount = (this.vectorizer.schema.getTransformedVectorSize() + 1);
+		
+		
+		
+
+		
+		
+//		vec.schema.debugPrintDatasetStatistics();
+		
+		System.out.println( "Max Timesteps: " + this.vectorizer.maxNumberTimeSteps );
+		
+		System.out.println( "ND4J Input Size: " );
+		System.out.println( "Minibatch: " + miniBatchSize );
+		System.out.println( "Column Count: " + columnCount );
+		System.out.println( "Timestep Count: " + this.vectorizer.maxNumberTimeSteps );
+		
+
+		//int currentOffset = 0;
+				
+	//	for ( int index = 0; index < this.vectorizer.listOfFilesToVectorize.length; index += miniBatchSize) {
+			
+			System.out.println( "\n\n ------------- Mini-batch offset: " + this.currentFileListIndex + " -----------------\n" );
+			DataSet d = this.vectorizer.generateNextTimeseriesVectorMiniBatch( miniBatchSize, this.currentFileListIndex, columnCount );
+			this.currentFileListIndex += miniBatchSize;
+			
+	//	}		
+		
+		
+			
+		return d;
+			
 	}
 
 	public int totalExamples() {
-		return numExamplesToFetch;
+		return this.currentFileListIndex;
 	}
 
 	public int inputColumns() {
-		return 0; //numCharacters;
+		return this.vectorizer.schema.getTransformedVectorSize() + 1;
 	}
 
 	public int totalOutcomes() {
-		return 0; //numCharacters;
+		return 2;
 	}
 
 	public void reset() {
-		examplesSoFar = 0;
+		this.currentFileListIndex = 0;
 	}
 
 	public int batch() {
@@ -218,11 +171,11 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 	}
 
 	public int cursor() {
-		return examplesSoFar;
+		return this.currentFileListIndex;
 	}
 
 	public int numExamples() {
-		return numExamplesToFetch;
+		return this.totalExamples;
 	}
 
 	public void setPreProcessor(DataSetPreProcessor preProcessor) {
