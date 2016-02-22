@@ -121,20 +121,20 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		
 		
 //		vec.schema.debugPrintDatasetStatistics();
-		
+		/*
 		System.out.println( "Max Timesteps: " + this.vectorizer.maxNumberTimeSteps );
 		
 		System.out.println( "ND4J Input Size: " );
 		System.out.println( "Minibatch: " + miniBatchSize );
 		System.out.println( "Column Count: " + columnCount );
 		System.out.println( "Timestep Count: " + this.vectorizer.maxNumberTimeSteps );
-		
+		*/
 
 		//int currentOffset = 0;
 				
 	//	for ( int index = 0; index < this.vectorizer.listOfFilesToVectorize.length; index += miniBatchSize) {
 			
-			System.out.println( "\n\n ------------- Mini-batch offset: " + this.currentFileListIndex + " -----------------\n" );
+		//	System.out.println( "\n\n ------------- Mini-batch offset: " + this.currentFileListIndex + " -----------------\n" );
 			DataSet d = this.vectorizer.generateNextTimeseriesVectorMiniBatch( miniBatchSize, this.currentFileListIndex, columnCount );
 			this.currentFileListIndex += miniBatchSize;
 			

@@ -451,7 +451,7 @@ public class PhysioNet_Vectorizer {
 		// have to make labels 3d, but we pad/mask everything but first timestep
 		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, 2, timestepCount } );
 		// mask / pad everything in labels up to the LAST timestep? and put the real labels there
-		INDArray labelsMask = Nd4j.ones(new int[]{ miniBatchSize, timestepCount } ); // labels are always used
+		INDArray labelsMask = Nd4j.zeros(new int[]{ miniBatchSize, timestepCount } ); // labels are always used
 		
 		int targetEndingIndex = miniBatchSize + currentMiniBatchOffset;
 		
@@ -646,16 +646,7 @@ public class PhysioNet_Vectorizer {
 		    
 		//    debugTreeMapData( timestampTreeMap );
 		    
-		    
-		    
-		    /*
-		    if (timeStepMap.size() == 0) {
-		    	
-		    	System.out.println( "File " + filepath + " contained no timesteps!" );
-		    	
-		    }
-		    */
-		    
+	
 		    
 		    
 		    
@@ -809,10 +800,15 @@ public class PhysioNet_Vectorizer {
 		
 	//	System.out.println( "label indexes: " + miniBatchIndex + ", " + labelPositiveColumnIndex );
 		
+		int adjustedTimeStepIndex = timeStepIndex - 1;
+		
+	//	System.out.println( "timeStepIndex: " + timeStepIndex + ", adjustedTimeStepIndex: " + adjustedTimeStepIndex );
+		
 		// TODO: temp timestep for now, FIX THIS
-		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex, 0 };
+		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex, adjustedTimeStepIndex };
 		dstLabels.putScalar( label_params, 1 );
 		
+		dstLabelsMask.putScalar( new int[]{ miniBatchIndex, adjustedTimeStepIndex }, 1 );
 		
 		
 	}
