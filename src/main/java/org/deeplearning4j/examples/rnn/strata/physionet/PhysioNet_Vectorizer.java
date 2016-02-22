@@ -438,13 +438,20 @@ public class PhysioNet_Vectorizer {
 		
 		int timestepCount = this.maxNumberTimeSteps; // 3rd dimension in matrix
 		
-		// featuresMask = Nd4j.ones(featureList.size(),longestTimeSeries);
+
+		// RULE OF THUMB for features vs masks
+		// features and labels are 3d
+		// masks are always 2d
 		
 		INDArray input = Nd4j.zeros(new int[]{ miniBatchSize, columnCount, timestepCount } );
-		INDArray inputMask = Nd4j.zeros( new int[]{ miniBatchSize, columnCount, timestepCount } );
+		// input mask should be 2d (no column count)
+		//  we only care about minibatch and timestep --- for a given timestep, we are either using ALL colums... or we are not
+		INDArray inputMask = Nd4j.zeros( new int[]{ miniBatchSize, timestepCount } );
 
-		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, 2 } );
-		INDArray labelsMask = Nd4j.ones(new int[]{ miniBatchSize, 2 } ); // labels are always used
+		// have to make labels 3d, but we pad/mask everything but first timestep
+		INDArray labels = Nd4j.zeros(new int[]{ miniBatchSize, 2, timestepCount } );
+		// mask / pad everything in labels up to the LAST timestep? and put the real labels there
+		INDArray labelsMask = Nd4j.ones(new int[]{ miniBatchSize, timestepCount } ); // labels are always used
 		
 		int targetEndingIndex = miniBatchSize + currentMiniBatchOffset;
 		
@@ -470,7 +477,7 @@ public class PhysioNet_Vectorizer {
 	    		
 	    		//this.scanFileForStatistics( tmpPath );
 	    		
-	    		System.out.println( ">>" + fileIndex + " of " + targetEndingIndex + " -> " + tmpPath );
+	    	//	System.out.println( ">>" + fileIndex + " of " + targetEndingIndex + " -> " + tmpPath );
 	    		this.extractFileContentsAndVectorize( tmpPath, matrixMiniBatchTmpIndex, columnCount, timestepCount, input, inputMask, labels, labelsMask );
 	    		matrixMiniBatchTmpIndex++;
 	    	
@@ -698,7 +705,7 @@ public class PhysioNet_Vectorizer {
 		//	System.out.println( "Timestep: " + timeStepIndex );
 //			System.out.println( "TS-Delta Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 			dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, deltaT );
-			dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
+			dstInputMask.putScalar(new int[]{ miniBatchIndex, timeStepIndex }, 1.0 );
 			columnIndex++;
 			
 			
@@ -722,7 +729,7 @@ public class PhysioNet_Vectorizer {
 //					System.out.println( "[" + key + ":" + val + " => " + transformedValue + "]" );
 //					System.out.println( "Descriptor Params: " + miniBatchIndex + ", " + columnIndex + ", " + timeStepIndex );
 					dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
-					dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
+					dstInputMask.putScalar(new int[]{ miniBatchIndex, timeStepIndex }, 1.0 );
 					columnIndex++;
 					
 				}
@@ -767,7 +774,7 @@ public class PhysioNet_Vectorizer {
 						//System.out.println( "Current Params: " + params[0] + ", " + params[1] + ", " + params[2] );
 						
 						dstInput.putScalar( params, transformedValue );
-						dstInputMask.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, 1.0 );
+						dstInputMask.putScalar(new int[]{ miniBatchIndex, timeStepIndex }, 1.0 );
 						
 						//dstInput.putScalar(new int[]{ miniBatchIndex, columnIndex, timeStepIndex }, transformedValue );
 						columnIndex++;
@@ -802,7 +809,8 @@ public class PhysioNet_Vectorizer {
 		
 	//	System.out.println( "label indexes: " + miniBatchIndex + ", " + labelPositiveColumnIndex );
 		
-		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex };
+		// TODO: temp timestep for now, FIX THIS
+		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex, 0 };
 		dstLabels.putScalar( label_params, 1 );
 		
 		

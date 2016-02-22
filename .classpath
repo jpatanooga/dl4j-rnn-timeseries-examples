@@ -92,7 +92,7 @@
   <classpathentry kind="var" path="M2_REPO/io/netty/netty-buffer/4.0.28.Final/netty-buffer-4.0.28.Final.jar" sourcepath="M2_REPO/io/netty/netty-buffer/4.0.28.Final/netty-buffer-4.0.28.Final-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/io/netty/netty-common/4.0.28.Final/netty-common-4.0.28.Final.jar" sourcepath="M2_REPO/io/netty/netty-common/4.0.28.Final/netty-common-4.0.28.Final-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/nd4j/canova-api/0.0.0.14/canova-api-0.0.0.14.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-compress/1.8/commons-compress-1.8.jar" sourcepath="M2_REPO/org/apache/commons/commons-compress/1.8/commons-compress-1.8-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-compress/1.10/commons-compress-1.10.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-math3/3.4.1/commons-math3-3.4.1.jar" sourcepath="M2_REPO/org/apache/commons/commons-math3/3.4.1/commons-math3-3.4.1-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/commons-io/commons-io/2.4/commons-io-2.4.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/nd4j/canova-nd4j-image/0.0.0.14/canova-nd4j-image-0.0.0.14.jar"/>
@@ -115,7 +115,6 @@
   <classpathentry kind="var" path="M2_REPO/com/twelvemonkeys/imageio/imageio-tiff/3.1.1/imageio-tiff-3.1.1.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/twelvemonkeys/imageio/imageio-psd/3.1.1/imageio-psd-3.1.1.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/twelvemonkeys/imageio/imageio-bmp/3.1.1/imageio-bmp-3.1.1.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/tukaani/xz/1.5/xz-1.5.jar" sourcepath="M2_REPO/org/tukaani/xz/1.5/xz-1.5-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/json/json/20131018/json-20131018.jar" sourcepath="M2_REPO/org/json/json/20131018/json-20131018-sources.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/spark-project/akka/akka-remote_2.10/2.3.4-spark/akka-remote_2.10-2.3.4-spark.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/scala-lang/scala-library/2.10.4/scala-library-2.10.4.jar"/>
