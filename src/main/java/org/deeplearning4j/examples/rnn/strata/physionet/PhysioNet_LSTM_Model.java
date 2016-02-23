@@ -8,12 +8,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
+import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.examples.rnn.shakespeare.CharacterIterator;
 import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -29,6 +32,7 @@ import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction;
+import org.nd4j.linalg.dataset.DataSet;
 
 public class PhysioNet_LSTM_Model {
 
@@ -42,6 +46,7 @@ public class PhysioNet_LSTM_Model {
 		
 		int lstmLayerSize = 200;					//Number of units in each GravesLSTM layer
 		int miniBatchSize = 20;						//Size of mini batch to use when  training
+		int totalExamplesToTrainWith = 4000;
 		//int examplesPerEpoch = 50 * miniBatchSize;	//i.e., how many examples to learn on between generating samples
 		//int exampleLength = 100;					//Length of each training example
 		int numEpochs = 1;							//Total number of training + sample generation epochs
@@ -57,14 +62,25 @@ public class PhysioNet_LSTM_Model {
 		//CharacterIterator iter = getShakespeareIterator(miniBatchSize,exampleLength,examplesPerEpoch);
 		int nOut = 2; //iter.totalOutcomes();
 		
-		PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, 4000 );
+		PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
+		
+		PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 1000 );
+		
+		//DataSet testData = iter.next();
+		//List<INDArray> testInput = new ArrayList<>();
+        //List<INDArray> testLabels = new ArrayList<>();
+        
+        //testInput.add( testData.getFeatureMatrix() ); //trainTest.getTest().getFeatureMatrix());
+        //testLabels.add( testData.getLabels() ); //trainTest.getTest().getLabels());        
+        
+		iter.reset();
 		
 		System.out.println( "We have " + iter.inputColumns() + " input columns." );
 		
 		//Set up network configuration:
 		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-			.learningRate(0.1)
+			.learningRate(0.01)
 			.rmsDecay(0.95)
 			.seed(12345)
 			.regularization(true)
@@ -113,6 +129,25 @@ public class PhysioNet_LSTM_Model {
 			//	System.out.println(samples[j]);
 			//	System.out.println();
 			//}
+			
+			
+			//Evaluation eval = new Evaluation( 2 );
+		
+			//INDArray output = net.output( testInput );
+			
+			Evaluation evaluation = new Evaluation(2);
+            while(test_iter.hasNext()){
+                DataSet t = test_iter.next();
+                INDArray features = t.getFeatureMatrix();
+                INDArray lables = t.getLabels();
+                INDArray inMask = t.getFeaturesMaskArray();
+                INDArray outMask = t.getLabelsMaskArray();
+                INDArray predicted = net.output(features,false,inMask,outMask);
+
+                evaluation.evalTimeSeries(lables,predicted,outMask);
+                System.out.println( evaluation.stats() );
+            }
+            test_iter.reset();
 			
 			iter.reset();	//Reset iterator for another epoch
 		}
