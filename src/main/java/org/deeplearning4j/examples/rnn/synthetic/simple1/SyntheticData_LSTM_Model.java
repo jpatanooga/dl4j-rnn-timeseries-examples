@@ -1,4 +1,4 @@
-package org.deeplearning4j.examples.rnn.synthetic;
+package org.deeplearning4j.examples.rnn.synthetic.simple1;
 
 import java.util.Random;
 
@@ -131,8 +131,9 @@ public class SyntheticData_LSTM_Model {
                 INDArray predicted = net.output(features,false,inMask,outMask);
 
                 evaluation.evalTimeSeries(lables,predicted,outMask);
-                System.out.println( evaluation.stats() );
+                
             }
+            System.out.println( evaluation.stats() );
             test_iter.reset();
 			
 			

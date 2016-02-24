@@ -1,4 +1,4 @@
-package org.deeplearning4j.examples.rnn.synthetic;
+package org.deeplearning4j.examples.rnn.synthetic.simple1;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
