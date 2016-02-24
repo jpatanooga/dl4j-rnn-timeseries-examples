@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-import org.deeplearning4j.examples.rnn.synthetic.SyntheticDataIterator;
+import org.deeplearning4j.examples.rnn.synthetic.simple1.SyntheticDataIterator;
 import org.junit.Test;
 
 public class TestSyntheticDataIterator {
