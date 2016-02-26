@@ -6,8 +6,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -40,7 +42,7 @@ public class PhysioNet_Vectorizer {
 	String labelFilePath = "";
 	
 	public PhysioNet_CSVSchema schema = null;
-	PhysioNetLabels labels = new PhysioNetLabels();
+	public PhysioNetLabels labels = new PhysioNetLabels();
 	
 	
 	public int minNumberTimeseriesEntriesForPatientRecord = 100; // think better about this
@@ -60,6 +62,34 @@ public class PhysioNet_Vectorizer {
 		this.schema = new PhysioNet_CSVSchema( );
 		this.schemaPath = schemaPath;
 		this.labelFilePath = labels_file_path;
+		
+		System.out.println( "scanning: " + this.srcDir );
+		
+
+		
+		File folder = new File( this.srcDir );
+		
+		if (!folder.exists()) {
+			System.out.println("File Does Not Exist.");
+			return;
+		}
+		
+		if (folder.isDirectory()) {
+			
+		} else {
+			System.out.println("This is a single file");
+		}
+
+		
+		//if (randomSubset) {
+			
+			
+		//} else {
+		
+			File[] listOfFiles = folder.listFiles();
+			this.listOfFilesToVectorize = listOfFiles; // laziness
+			
+		//}		
 		
 	}
 	
@@ -95,19 +125,12 @@ public class PhysioNet_Vectorizer {
 		
 	}
 	
-
-	/**
-	 * The purpose of collecting summary statistics for PhysioNet is to 
-	 * 
-	 * 	1. discover all of the columns
-	 * 	2. get the ranges of their values
-	 * 
-	 */
-	public void collectStatistics() {
-		
-		// for each patient file
-		
+	
+	public void setupBalancedSubset(int totalRecords) {
+		/*
 		System.out.println( "scanning: " + this.srcDir );
+		
+
 		
 		File folder = new File( this.srcDir );
 		
@@ -121,35 +144,131 @@ public class PhysioNet_Vectorizer {
 		} else {
 			System.out.println("This is a single file");
 		}
-		
-		File[] listOfFiles = folder.listFiles();
-		this.listOfFilesToVectorize = listOfFiles; // laziness
-		
-		
-		 System.out.println( "Found Files: " + listOfFiles.length + "\n" );
 
-	    for (int i = 0; i < listOfFiles.length; i++) {
+		
+		if (randomSubset) {
+			
+			
+		} else {
+		
+			File[] listOfFiles = folder.listFiles();
+			this.listOfFilesToVectorize = listOfFiles; // laziness
+			
+		}
+		*/
+		
+		
+		List<String> negativeClassFiles = new ArrayList<>();
+		
+		// survived
+		List<String> positiveClassFiles = new ArrayList<>();
+		
+		//for (int x = 0; x < 100; x++) {
+		while (negativeClassFiles.size() + positiveClassFiles.size() < totalRecords) {
+			
+			int randomIndex = (int )(Math.random() * 4000);
+			
+			String filename = this.getFilenameForIndex(randomIndex);
+			
+			String[] filenameParts = filename.split(".t");
+			String patientID = filenameParts[ 0 ];
+			
+			//System.out.println( "" + patientID );
+			
+			if (0 == this.labels.translateLabelEntry(patientID)) {
+				
+				// died
+				if (negativeClassFiles.size() < totalRecords / 2) { 
+					negativeClassFiles.add( patientID );
+				}
+				
+			} else {
+				
+				// survived
+				if (positiveClassFiles.size() < totalRecords / 2) {
+					positiveClassFiles.add( patientID );
+				}
+				
+			}
+			
+		} // while
+		
+		System.out.println( "Subset Setup -> Classes: " );
+		
+		System.out.println( "Survived: " + positiveClassFiles.size() );
+		System.out.println( "Died: " + negativeClassFiles.size() );
+		
+		File[] listOfFiles = new File[ totalRecords ];
+		for ( int x = 0; x < totalRecords; x++) {
+			
+			String patientID = "";
+			if (positiveClassFiles.size() > negativeClassFiles.size()) {
+				
+				patientID = positiveClassFiles.remove(0);
+				String path = this.srcDir + patientID + ".txt";
+				listOfFiles[ x ] = new File( path );
+				
+				System.out.println( "pos: " + path );
+				
+			} else {
+				
+				patientID = negativeClassFiles.remove(0);
+				String path = this.srcDir + patientID + ".txt";
+				listOfFiles[ x ] = new File( path );
+				
+				System.out.println( "neg: " + path );
+				
+				
+			}
+			
+			
+			
+		}	
+		
+		this.listOfFilesToVectorize = listOfFiles;
+		
+		
+		
+	}
 
-	    	if (listOfFiles[i].isFile()) {
+	/**
+	 * The purpose of collecting summary statistics for PhysioNet is to 
+	 * 
+	 * 	1. discover all of the columns
+	 * 	2. get the ranges of their values
+	 * 
+	 */
+	public void collectStatistics() {
+		
+		// for each patient file
+		
+
+		
+		
+		 System.out.println( "Found Files: " + this.listOfFilesToVectorize.length + "\n" );
+
+	    for (int i = 0; i < this.listOfFilesToVectorize.length; i++) {
+
+	    	if (this.listOfFilesToVectorize[i].isFile()) {
 	    	
 	    		// System.out.println("File: " + listOfFiles[i].getName() );
 	    		
 	    		String tmpPath = this.srcDir;
 	    		if (tmpPath.trim().endsWith("/")) {
 	    			
-	    			tmpPath += listOfFiles[i].getName();
+	    			tmpPath += this.listOfFilesToVectorize[i].getName();
 	    			
 	    		} else {
 	    			
-	    			tmpPath += "/" + listOfFiles[i].getName();
+	    			tmpPath += "/" + this.listOfFilesToVectorize[i].getName();
 	    			
 	    		}
 	    		
 	    		this.scanFileForStatistics( tmpPath );
 	    	
-	    	} else if (listOfFiles[i].isDirectory()) {
+	    	} else if (this.listOfFilesToVectorize[i].isDirectory()) {
 	    	
-	    		System.out.println("Directory: " + listOfFiles[i].getName());
+	    		System.out.println("Directory: " + this.listOfFilesToVectorize[i].getName());
 	    	
 	    	}
 	    	
@@ -160,28 +279,28 @@ public class PhysioNet_Vectorizer {
 	    // now make the pass for derived statistics
 	    System.out.println( "Scanning for derived Statistics ... " ); 
 	    
-	    for (int i = 0; i < listOfFiles.length; i++) {
+	    for (int i = 0; i < this.listOfFilesToVectorize.length; i++) {
 
-	    	if (listOfFiles[i].isFile()) {
+	    	if (this.listOfFilesToVectorize[i].isFile()) {
 	    	
 	    		// System.out.println("File: " + listOfFiles[i].getName() );
 	    		
 	    		String tmpPath = this.srcDir;
 	    		if (tmpPath.trim().endsWith("/")) {
 	    			
-	    			tmpPath += listOfFiles[i].getName();
+	    			tmpPath += this.listOfFilesToVectorize[i].getName();
 	    			
 	    		} else {
 	    			
-	    			tmpPath += "/" + listOfFiles[i].getName();
+	    			tmpPath += "/" + this.listOfFilesToVectorize[i].getName();
 	    			
 	    		}
 	    		
 	    		this.scanFileForDerivedStatistics( tmpPath );
 	    	
-	    	} else if (listOfFiles[i].isDirectory()) {
+	    	} else if (this.listOfFilesToVectorize[i].isDirectory()) {
 	    	
-	    		System.out.println("Directory: " + listOfFiles[i].getName());
+	    		System.out.println("Directory: " + this.listOfFilesToVectorize[i].getName());
 	    	
 	    	}
 	    	
