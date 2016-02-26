@@ -49,7 +49,7 @@ public class PhysioNet_LSTM_Model {
 		int totalExamplesToTrainWith = 800;
 		//int examplesPerEpoch = 50 * miniBatchSize;	//i.e., how many examples to learn on between generating samples
 		//int exampleLength = 100;					//Length of each training example
-		int numEpochs = 20;							//Total number of training + sample generation epochs
+		int numEpochs = 50;							//Total number of training + sample generation epochs
 		//int nSamplesToGenerate = 4;					//Number of samples to generate after each training epoch
 		//int nCharactersToSample = 300;				//Length of each sample to generate
 		//String generationInitialization = null;		//Optional character initialization; a random character is used if null
@@ -80,7 +80,7 @@ public class PhysioNet_LSTM_Model {
 		//Set up network configuration:
 		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-			.learningRate(0.005)
+			.learningRate(0.008)
 			.rmsDecay(0.95)
 			.seed(12345)
 			.regularization(true)
