@@ -22,6 +22,12 @@ public class PhysioNetDataUtils {
 		String physioSchemaFilePath = "src/test/resources/physionet_schema.txt";
 		String physioLabelsFilePath = "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt";
 		
+		String dstPathTrainingDirectory = dstBasePath + "train/";
+		String dstPathTestDirectory = dstBasePath + "test/";
+		
+		int testDatasetSize = 200;
+		
+		
 		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer( physioNetBaseDirectory, physioSchemaFilePath, physioLabelsFilePath );
 		vec.loadSchema();
 		vec.loadLabels();
@@ -33,14 +39,20 @@ public class PhysioNetDataUtils {
 		
 		int balancedMaxSize = vec.labels.diedLabelCount * 2;
 		
-		System.out.println( "> Balanced Dataset Max Size: " + balancedMaxSize );
+		int trainDatasetSize = balancedMaxSize - testDatasetSize;
+		
+		//System.out.println( "> Balanced Dataset Max Size: " + balancedMaxSize );
+		System.out.println( "> Balanced [Train] Dataset Size: " + trainDatasetSize );
+		System.out.println( "> Balanced [Test] Dataset Size: " + testDatasetSize );
 		
 		Map<String, String> negativeClassFiles = new LinkedHashMap<>();
+		Map<String, String> negativeClassFilesTest = new LinkedHashMap<>();
 		
 		// survived
 		Map<String, String> positiveClassFiles = new LinkedHashMap<>();
+		Map<String, String> positiveClassFilesTest = new LinkedHashMap<>();
 		
-		//for (int x = 0; x < 100; x++) {
+		// get all of the examples we can up to the max
 		while (negativeClassFiles.size() + positiveClassFiles.size() < balancedMaxSize) {
 			
 			int randomIndex = (int )(Math.random() * 4000);
@@ -90,15 +102,63 @@ public class PhysioNetDataUtils {
 		System.out.println( "Survived: " + positiveClassFiles.size() );
 		System.out.println( "Died: " + negativeClassFiles.size() );
 		
-		File dstPath = new File( dstBasePath );
 		
-		System.out.println( "Copy to: " + dstPath );
+		// NOW bleed off the test subset
+		
+		//File dstPathTest = new File( dstPathTestDirectory );
+		
+		System.out.println( "Copy Test Files To: " + dstPathTestDirectory );
+		
+		
+		int loopMax = testDatasetSize / 2;
+		for (int x = 0; x < loopMax; x++ ) {
+			
+			String patientID = "";
+			
+			Entry<String, String> posEntry = positiveClassFiles.entrySet().iterator().next();
+			patientID = posEntry.getKey(); 
+			positiveClassFiles.remove(patientID);
+			
+			//positiveClassFilesTest.put(patientID, "");
+			
+			// just copy now
+			String path = vec.srcDir + patientID + ".txt";
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTestDirectory + patientID + ".txt" ) );
+			
+			
+
+			Entry<String, String> negEntry = negativeClassFiles.entrySet().iterator().next();
+			patientID = negEntry.getKey(); 
+			negativeClassFiles.remove(patientID);
+			
+			//negativeClassFilesTest.put(patientID, "");
+			
+			// just copy now
+			
+			path = vec.srcDir + patientID + ".txt";
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTestDirectory + patientID + ".txt" ) );
+			
+			
+		}
+		
+		
+		
+		
+		//File dstPathTraining = new File( dstPathTrainingDirectory );
+		
+		System.out.println( "Copy Training Files To: " + dstPathTrainingDirectory );
 		
 		int posFilesCopied = 0;
 		int negFilesCopied = 0;
 		
-		File[] listOfFiles = new File[ balancedMaxSize ];
-		for ( int x = 0; x < balancedMaxSize; x++) {
+		if ( trainDatasetSize != positiveClassFiles.size() + negativeClassFiles.size() ) {
+			System.err.println( "ERR: invalid copy size for remaining training data..." );
+		}
+		
+		//File[] listOfFiles = new File[ balancedMaxSize ];
+		for ( int x = 0; x < trainDatasetSize; x++) {
 			
 			String patientID = "";
 			if (positiveClassFiles.size() > negativeClassFiles.size()) {
@@ -112,9 +172,11 @@ public class PhysioNetDataUtils {
 				positiveClassFiles.remove(patientID);
 				
 				String path = vec.srcDir + patientID + ".txt";
-				listOfFiles[ x ] = new File( path );
+				//listOfFiles[ x ] = new File( path );
 				
 		//		System.out.println( "pos: " + listOfFiles[ x ].getName() );
+				
+				FileUtils.copyFile( new File(path), new File(dstPathTrainingDirectory + patientID + ".txt" ) );
 				
 				posFilesCopied++;
 				
@@ -128,7 +190,9 @@ public class PhysioNetDataUtils {
 				
 				//patientID = negativeClassFiles.remove(0);
 				String path = vec.srcDir + patientID + ".txt";
-				listOfFiles[ x ] = new File( path );
+				//listOfFiles[ x ] = new File( path );
+				
+				FileUtils.copyFile( new File(path), new File(dstPathTrainingDirectory + patientID + ".txt" ) );
 				
 			//	System.out.println( "neg: " + path );
 				negFilesCopied++;
@@ -136,7 +200,7 @@ public class PhysioNetDataUtils {
 			}
 			
 			
-			FileUtils.copyFile( listOfFiles[ x ], new File(dstBasePath + listOfFiles[ x ].getName() ) );
+			
 			
 			//filesCopied++;
 			

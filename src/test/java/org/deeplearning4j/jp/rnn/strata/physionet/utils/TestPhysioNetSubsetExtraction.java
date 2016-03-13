@@ -37,7 +37,7 @@ public class TestPhysioNetSubsetExtraction {
 	public void testExtractFolds() throws IOException {
 		
 		
-		PhysioNetDataUtils.extractNFoldSubset(true, "srcDirectory", "schemaPath", "labels_file_path", "/tmp/set-a-balanced-3/");
+		PhysioNetDataUtils.extractNFoldSubset(true, "srcDirectory", "schemaPath", "labels_file_path", "/tmp/set-a-balanced-5/");
 		
 	}
 

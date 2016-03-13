@@ -46,7 +46,7 @@ public class PhysioNet_LSTM_Model {
 		
 		int lstmLayerSize = 200;					//Number of units in each GravesLSTM layer
 		int miniBatchSize = 20;						//Size of mini batch to use when  training
-		int totalExamplesToTrainWith = 800;
+		int totalExamplesToTrainWith = 1100;
 		//int examplesPerEpoch = 50 * miniBatchSize;	//i.e., how many examples to learn on between generating samples
 		//int exampleLength = 100;					//Length of each training example
 		int numEpochs = 30;							//Total number of training + sample generation epochs
@@ -62,9 +62,13 @@ public class PhysioNet_LSTM_Model {
 		//CharacterIterator iter = getShakespeareIterator(miniBatchSize,exampleLength,examplesPerEpoch);
 		int nOut = 2; //iter.totalOutcomes();
 		
-		PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
+		//PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
 		
-		PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 100 );
+		PhysioNet_ICU_Mortality_Iterator iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/train/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 200);
+		
+	//	PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 100 );
+		
+		PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/test/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 200);
 		
 		//DataSet testData = iter.next();
 		//List<INDArray> testInput = new ArrayList<>();
