@@ -49,7 +49,7 @@ public class PhysioNet_LSTM_Model {
 		int totalExamplesToTrainWith = 800;
 		//int examplesPerEpoch = 50 * miniBatchSize;	//i.e., how many examples to learn on between generating samples
 		//int exampleLength = 100;					//Length of each training example
-		int numEpochs = 50;							//Total number of training + sample generation epochs
+		int numEpochs = 30;							//Total number of training + sample generation epochs
 		//int nSamplesToGenerate = 4;					//Number of samples to generate after each training epoch
 		//int nCharactersToSample = 300;				//Length of each sample to generate
 		//String generationInitialization = null;		//Optional character initialization; a random character is used if null
@@ -64,7 +64,7 @@ public class PhysioNet_LSTM_Model {
 		
 		PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
 		
-	//	PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( 40, 40 );
+		PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 100 );
 		
 		//DataSet testData = iter.next();
 		//List<INDArray> testInput = new ArrayList<>();
@@ -77,10 +77,19 @@ public class PhysioNet_LSTM_Model {
 		
 		System.out.println( "We have " + iter.inputColumns() + " input columns." );
 		
+		// *****************************
+		// TODO: Drop:
+/*
+dropout for rnns is applied on the input activations only, not recurrent activations
+as is common in the literature
+same as other layers
+so .dropout(0.5) with .regularization(true)		
+ */
+		
 		//Set up network configuration:
 		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-			.learningRate(0.008)
+			.learningRate(0.01)
 			.rmsDecay(0.95)
 			.seed(12345)
 			.regularization(true)
@@ -138,8 +147,8 @@ public class PhysioNet_LSTM_Model {
 			iter.reset();
 			
 			Evaluation evaluation = new Evaluation(2);
-            while(iter.hasNext()){
-                DataSet t = iter.next();
+            while(test_iter.hasNext()){
+                DataSet t = test_iter.next();
                 INDArray features = t.getFeatureMatrix();
                 INDArray lables = t.getLabels();
                 INDArray inMask = t.getFeaturesMaskArray();
@@ -152,7 +161,7 @@ public class PhysioNet_LSTM_Model {
             //test_iter.reset();
             System.out.println( evaluation.stats() );
 			
-			iter.reset();	//Reset iterator for another epoch
+            test_iter.reset();	//Reset iterator for another epoch
 		}
 		
 /*

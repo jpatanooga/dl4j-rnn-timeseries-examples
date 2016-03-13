@@ -12,8 +12,8 @@ public class PhysioNetLabels {
 	
 	String path = "";
 	String columnDelimiter = ",";
-	int survivedLabelCount = 0;
-	int diedLabelCount = 0;
+	public int survivedLabelCount = 0;
+	public int diedLabelCount = 0;
 	
 	
 	// Labels: PatientID -> Map< ColName, ColValue >

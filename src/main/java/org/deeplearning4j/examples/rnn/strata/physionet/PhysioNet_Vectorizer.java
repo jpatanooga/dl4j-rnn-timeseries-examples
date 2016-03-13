@@ -35,7 +35,7 @@ import org.nd4j.linalg.factory.Nd4j;
 public class PhysioNet_Vectorizer {
 	
 	boolean hasCollectedStatistics = false;
-	String srcDir = null;
+	public String srcDir = null;
 	String currentPatientFile = null;
 	String columnDelimiter = ",";
 	String schemaPath = "";
