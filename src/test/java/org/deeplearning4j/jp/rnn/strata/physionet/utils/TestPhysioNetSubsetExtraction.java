@@ -2,6 +2,7 @@ package org.deeplearning4j.jp.rnn.strata.physionet.utils;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.deeplearning4j.examples.rnn.strata.physionet.PhysioNet_Vectorizer;
@@ -11,6 +12,14 @@ import org.junit.Test;
 
 public class TestPhysioNetSubsetExtraction {
 
+	@Test
+	public void testDir() {
+		
+		String fileNamePath = "/tmp/rnns/physionet/models/";
+		
+		
+	}
+	
 	@Test
 	public void test() {
 		//fail("Not yet implemented");
@@ -37,7 +46,7 @@ public class TestPhysioNetSubsetExtraction {
 	public void testExtractFolds() throws IOException {
 		
 		
-		PhysioNetDataUtils.extractNFoldSubset(true, "srcDirectory", "schemaPath", "labels_file_path", "/tmp/set-a-balanced-5/");
+		PhysioNetDataUtils.extractNFoldSubsetBalanced(true, "srcDirectory", "schemaPath", "labels_file_path", "/tmp/set-a-balanced-validate-6/");
 		
 	}
 

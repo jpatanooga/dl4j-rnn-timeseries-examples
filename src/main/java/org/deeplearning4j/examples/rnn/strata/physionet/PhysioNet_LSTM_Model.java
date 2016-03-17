@@ -2,13 +2,17 @@ package org.deeplearning4j.examples.rnn.strata.physionet;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -18,6 +22,8 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.examples.rnn.shakespeare.CharacterIterator;
+import org.deeplearning4j.examples.rnn.strata.physionet.utils.EvalScoreTracker;
+import org.deeplearning4j.examples.rnn.strata.physionet.utils.PhysioNetDataUtils;
 import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -42,42 +48,50 @@ public class PhysioNet_LSTM_Model {
 		
 	}
 	
+	public static void scoreInputWithModel(String modelPath) throws Exception {
+		
+		
+	}
+	
+	public static void resumeTrainingPhysioNetModel(String modelPath) throws Exception {
+		
+		
+		
+		
+	}
+	
 	public static void trainPhysioNetExample() throws Exception {
 		
 		int lstmLayerSize = 200;					//Number of units in each GravesLSTM layer
 		int miniBatchSize = 20;						//Size of mini batch to use when  training
-		int totalExamplesToTrainWith = 1100;
-		//int examplesPerEpoch = 50 * miniBatchSize;	//i.e., how many examples to learn on between generating samples
-		//int exampleLength = 100;					//Length of each training example
-		int numEpochs = 30;							//Total number of training + sample generation epochs
-		//int nSamplesToGenerate = 4;					//Number of samples to generate after each training epoch
-		//int nCharactersToSample = 300;				//Length of each sample to generate
-		//String generationInitialization = null;		//Optional character initialization; a random character is used if null
-		// Above is Used to 'prime' the LSTM with a character sequence to continue/complete.
-		// Initialization characters must all be in CharacterIterator.getMinimalCharacterSet() by default
-		Random rng = new Random(12345);
+		//int totalExamplesToTrainWith = 1100;
 		
-		//Get a DataSetIterator that handles vectorization of text into something we can use to train
-		// our GravesLSTM network.
-		//CharacterIterator iter = getShakespeareIterator(miniBatchSize,exampleLength,examplesPerEpoch);
+		int trainingExamples = 800;
+		int testExamples = 150;
+		int validateExamples = 150;
+		
+		double learningRate = 0.007;
+		
+		int numEpochs = 30;							//Total number of training + sample generation epochs
+		Random rng = new Random(12345);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH_mm_ss");
+		
 		int nOut = 2; //iter.totalOutcomes();
 		
 		//PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
 		
-		PhysioNet_ICU_Mortality_Iterator iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/train/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 200);
+		PhysioNet_ICU_Mortality_Iterator iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-validate-6/train/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, trainingExamples);
+		
+		
+		PhysioNet_ICU_Mortality_Iterator iter_validate = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-validate-6/validate/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", 10, validateExamples);
 		
 	//	PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 100 );
 		
-		PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/test/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 200);
+		//PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/test/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 20);
+		PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-validate-6/test/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", 10, testExamples);
 		
-		//DataSet testData = iter.next();
-		//List<INDArray> testInput = new ArrayList<>();
-        //List<INDArray> testLabels = new ArrayList<>();
-        
-        //testInput.add( testData.getFeatureMatrix() ); //trainTest.getTest().getFeatureMatrix());
-        //testLabels.add( testData.getLabels() ); //trainTest.getTest().getLabels());        
-        
 		iter.reset();
+		test_iter.reset();
 		
 		System.out.println( "We have " + iter.inputColumns() + " input columns." );
 		
@@ -93,7 +107,7 @@ so .dropout(0.5) with .regularization(true)
 		//Set up network configuration:
 		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
-			.learningRate(0.01)
+			.learningRate( learningRate )
 			.rmsDecay(0.95)
 			.seed(12345)
 			.regularization(true)
@@ -114,9 +128,16 @@ so .dropout(0.5) with .regularization(true)
 			.pretrain(false).backprop(true)
 			.build();
 		
+
+		
+
+		
 		MultiLayerNetwork net = new MultiLayerNetwork(conf);
 		net.init();
 		net.setListeners(new ScoreIterationListener(1));
+
+		System.out.println( "Loading old parameters [test] >> " );
+		PhysioNetDataUtils.loadDL4JNetworkParameters( net, "/tmp/rnns/physionet/models/dl4j_model_run_2016-03-17_14_13_14/epoch_9_f1_0.7507/" );
 		
 		//Print the  number of parameters in the network (and for each layer)
 		Layer[] layers = net.getLayers();
@@ -129,43 +150,87 @@ so .dropout(0.5) with .regularization(true)
 		System.out.println("Total number of network parameters: " + totalNumParams);
 		
 		
+		long startTime = System.currentTimeMillis();
+
+		
+		EvalScoreTracker f1Tracker = new EvalScoreTracker( 20 );
+        Date now = new Date();
+        String strDate = sdf.format(now);        
+        DecimalFormat df = new DecimalFormat("#.0000"); 
+        String runID = "dl4j_model_run_" + strDate;
+		
+		
 		//Do training, and then generate and print samples from network
-		for( int i=0; i<numEpochs; i++ ){
+		for ( int i=0; i<numEpochs; i++ ){
+			
+			iter.reset();
+			test_iter.reset();
+			iter_validate.reset();
+			
+			
 			net.fit(iter);
 			
 			System.out.println("--------------------");
 			System.out.println("Completed epoch " + i );
-			//System.out.println("Sampling characters from network given initialization \""+ (generationInitialization == null ? "" : generationInitialization) +"\"");
-			//String[] samples = sampleCharactersFromNetwork(generationInitialization,net,iter,rng,nCharactersToSample,nSamplesToGenerate);
-			//for( int j=0; j<samples.length; j++ ){
-			//	System.out.println("----- Sample " + j + " -----");
-			//	System.out.println(samples[j]);
-			//	System.out.println();
-			//}
 			
+			long curTime = System.currentTimeMillis();
+			
+			long progressElapsedTimeMS = (curTime - startTime);
+			long processElpasedTimeMin = progressElapsedTimeMS / 1000 / 60;
+			
+			System.out.println("Elapsed Time So Far: " + processElpasedTimeMin + " minutes");
 			
 			//Evaluation eval = new Evaluation( 2 );
 		
 			//INDArray output = net.output( testInput );
 			
 			iter.reset();
+			test_iter.reset();
+			iter_validate.reset();
 			
-			Evaluation evaluation = new Evaluation(2);
-            while(test_iter.hasNext()){
-                DataSet t = test_iter.next();
+			Evaluation evaluation_train = new Evaluation(2);
+            while(iter.hasNext()){
+                DataSet t = iter.next();
                 INDArray features = t.getFeatureMatrix();
                 INDArray lables = t.getLabels();
                 INDArray inMask = t.getFeaturesMaskArray();
                 INDArray outMask = t.getLabelsMaskArray();
                 INDArray predicted = net.output(features,false,inMask,outMask);
 
-                evaluation.evalTimeSeries(lables,predicted,outMask);
+                evaluation_train.evalTimeSeries(lables,predicted,outMask);
+                
+            }			
+			
+			Evaluation evaluation_validate = new Evaluation(2);
+            while(iter_validate.hasNext()){
+                DataSet t = iter_validate.next();
+                INDArray features = t.getFeatureMatrix();
+                INDArray lables = t.getLabels();
+                INDArray inMask = t.getFeaturesMaskArray();
+                INDArray outMask = t.getLabelsMaskArray();
+                INDArray predicted = net.output(features,false,inMask,outMask);
+
+                evaluation_validate.evalTimeSeries(lables,predicted,outMask);
                 
             }
             //test_iter.reset();
-            System.out.println( evaluation.stats() );
-			
-            test_iter.reset();	//Reset iterator for another epoch
+            System.out.println( "\nTrain Evaluation: ");
+            System.out.println( evaluation_train.stats() );
+            System.out.println( "\nValidate Evaluation: ");
+            System.out.println( evaluation_validate.stats() );
+            
+            f1Tracker.addF1( i, evaluation_train.f1(), evaluation_validate.f1() );
+            f1Tracker.printWindow();
+            
+            String epochID = "epoch_" + i + "_f1_0" + df.format( evaluation_train.f1() );
+            
+            String fileNamePathBase = "/tmp/rnns/physionet/models/" + runID + "/" + epochID + "/";
+            
+            File dirs = new File(fileNamePathBase);
+            dirs.mkdirs();
+            
+            PhysioNetDataUtils.saveDL4JNetwork( net, fileNamePathBase );
+            
 		}
 		
 /*
@@ -177,6 +242,18 @@ that only works for the many-to-one case though
 		
 		
 		System.out.println("\n\nExample complete");
+		
+		long endTime = System.currentTimeMillis();
+		
+		long elapsedTimeMS = (endTime - startTime);
+		long elpasedTimeSeconds = elapsedTimeMS / 1000;
+		long elapsedTimeMinutes = elpasedTimeSeconds / 60;
+		long elapsedTimeHours = elapsedTimeMinutes / 60;
+
+		System.out.println("Training took " + (elpasedTimeSeconds) + " seconds");
+		System.out.println("Training took " + elapsedTimeMinutes + " minutes");
+		System.out.println("Training took " + elapsedTimeHours + " hours");
+		
 	}
 
 	/** Downloads PhysioNet training data and stores it locally (temp directory). Then set up and return a simple

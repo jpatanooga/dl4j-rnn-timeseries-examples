@@ -53,6 +53,7 @@ public class PhysioNet_ICU_Mortality_Iterator implements DataSetIterator {
 		this.vectorizer.loadSchema();
 		this.vectorizer.loadLabels();
 		
+		this.vectorizer.setSpecialStatisticsFileList("/tmp/set-a/");
 	//	this.vectorizer.setupBalancedSubset( totalExamples );
 		
 		this.vectorizer.collectStatistics();

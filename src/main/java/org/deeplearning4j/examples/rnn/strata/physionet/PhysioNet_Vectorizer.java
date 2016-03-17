@@ -36,6 +36,7 @@ public class PhysioNet_Vectorizer {
 	
 	boolean hasCollectedStatistics = false;
 	public String srcDir = null;
+	public String srcDirAlternativeStatistics = null;
 	String currentPatientFile = null;
 	String columnDelimiter = ",";
 	String schemaPath = "";
@@ -55,6 +56,7 @@ public class PhysioNet_Vectorizer {
 	public int outOfOrderTimestampCount = 0;
 	
 	public File[] listOfFilesToVectorize = null;
+	public File[] listOfFilesToCollectStatistics = null;
 	
 	public PhysioNet_Vectorizer(String srcDirectory, String schemaPath, String labels_file_path) {
 		
@@ -89,7 +91,35 @@ public class PhysioNet_Vectorizer {
 			File[] listOfFiles = folder.listFiles();
 			this.listOfFilesToVectorize = listOfFiles; // laziness
 			
+			System.out.println("Vectorizer: ");
+			System.out.println("Vectorize Src Dir: " + this.srcDir );
+			System.out.println("Files Found To Vectorize: " + this.listOfFilesToVectorize.length );
+			
 		//}		
+		
+	}
+	
+	public void setSpecialStatisticsFileList( String strPathStatisticsFiles ) {
+		
+		this.srcDirAlternativeStatistics = strPathStatisticsFiles;
+		
+		File folder = new File( strPathStatisticsFiles );
+		
+		if (!folder.exists()) {
+			System.out.println( strPathStatisticsFiles + " Does Not Exist.");
+			return;
+		}
+		
+		if (folder.isDirectory()) {
+			
+		} else {
+			System.out.println("This is a single file");
+		}
+
+		
+		
+		this.listOfFilesToCollectStatistics = folder.listFiles();
+		
 		
 	}
 	
@@ -241,34 +271,43 @@ public class PhysioNet_Vectorizer {
 	public void collectStatistics() {
 		
 		// for each patient file
-		
 
-		
-		
-		 System.out.println( "Found Files: " + this.listOfFilesToVectorize.length + "\n" );
+		String baseScanPath = "";
 
-	    for (int i = 0; i < this.listOfFilesToVectorize.length; i++) {
+		if ( this.listOfFilesToCollectStatistics == null) {
+			System.out.println( "Collecting Stats: List of Files to Vectorize"  );
+			this.listOfFilesToCollectStatistics = this.listOfFilesToVectorize;
+			baseScanPath = this.srcDir;
+		} else {
+			System.out.println( "Collecting Stats: Special List"  );
+			baseScanPath = this.srcDirAlternativeStatistics;
+		}
+		
+		System.out.println( "Base Stats Scan Path: " + baseScanPath );
+		System.out.println( "Collecting Statistics For : " + this.listOfFilesToCollectStatistics.length + "\n" );
 
-	    	if (this.listOfFilesToVectorize[i].isFile()) {
+	    for (int i = 0; i < this.listOfFilesToCollectStatistics.length; i++) {
+
+	    	if (this.listOfFilesToCollectStatistics[i].isFile()) {
 	    	
 	    		// System.out.println("File: " + listOfFiles[i].getName() );
 	    		
-	    		String tmpPath = this.srcDir;
+	    		String tmpPath = baseScanPath;
 	    		if (tmpPath.trim().endsWith("/")) {
 	    			
-	    			tmpPath += this.listOfFilesToVectorize[i].getName();
+	    			tmpPath += this.listOfFilesToCollectStatistics[i].getName();
 	    			
 	    		} else {
 	    			
-	    			tmpPath += "/" + this.listOfFilesToVectorize[i].getName();
+	    			tmpPath += "/" + this.listOfFilesToCollectStatistics[i].getName();
 	    			
 	    		}
 	    		
 	    		this.scanFileForStatistics( tmpPath );
 	    	
-	    	} else if (this.listOfFilesToVectorize[i].isDirectory()) {
+	    	} else if (this.listOfFilesToCollectStatistics[i].isDirectory()) {
 	    	
-	    		System.out.println("Directory: " + this.listOfFilesToVectorize[i].getName());
+	    		System.out.println("Directory: " + this.listOfFilesToCollectStatistics[i].getName());
 	    	
 	    	}
 	    	
@@ -279,28 +318,28 @@ public class PhysioNet_Vectorizer {
 	    // now make the pass for derived statistics
 	    System.out.println( "Scanning for derived Statistics ... " ); 
 	    
-	    for (int i = 0; i < this.listOfFilesToVectorize.length; i++) {
+	    for (int i = 0; i < this.listOfFilesToCollectStatistics.length; i++) {
 
-	    	if (this.listOfFilesToVectorize[i].isFile()) {
+	    	if (this.listOfFilesToCollectStatistics[i].isFile()) {
 	    	
 	    		// System.out.println("File: " + listOfFiles[i].getName() );
 	    		
-	    		String tmpPath = this.srcDir;
+	    		String tmpPath = baseScanPath;
 	    		if (tmpPath.trim().endsWith("/")) {
 	    			
-	    			tmpPath += this.listOfFilesToVectorize[i].getName();
+	    			tmpPath += this.listOfFilesToCollectStatistics[i].getName();
 	    			
 	    		} else {
 	    			
-	    			tmpPath += "/" + this.listOfFilesToVectorize[i].getName();
+	    			tmpPath += "/" + this.listOfFilesToCollectStatistics[i].getName();
 	    			
 	    		}
 	    		
 	    		this.scanFileForDerivedStatistics( tmpPath );
 	    	
-	    	} else if (this.listOfFilesToVectorize[i].isDirectory()) {
+	    	} else if (this.listOfFilesToCollectStatistics[i].isDirectory()) {
 	    	
-	    		System.out.println("Directory: " + this.listOfFilesToVectorize[i].getName());
+	    		System.out.println("Directory: " + this.listOfFilesToCollectStatistics[i].getName());
 	    	
 	    	}
 	    	

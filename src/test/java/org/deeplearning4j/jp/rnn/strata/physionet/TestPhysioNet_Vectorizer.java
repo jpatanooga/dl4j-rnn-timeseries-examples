@@ -43,6 +43,27 @@ public class TestPhysioNet_Vectorizer {
 	}
 
 	@Test
+	public void testScanAlternateStatisticsDirectory() {
+		
+		//PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("src/test/resources/data/physionet/sample/set-a/", "src/test/resources/physionet_schema.txt" );
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer("/tmp/set-a-balanced-5/train/", "src/test/resources/physionet_schema.txt", "src/test/resources/sample/set-a-label/Outcomes-a.txt" );
+		vec.loadSchema();
+
+		vec.setSpecialStatisticsFileList("/tmp/set-a/");
+		
+		vec.collectStatistics();
+		vec.schema.computeDatasetStatistics();
+		
+		vec.debugStats();
+		
+		vec.schema.debugPrintRogueColumns();
+
+		vec.schema.debugPrintDatasetStatistics();
+
+	}
+	
+	
+	@Test
 	public void testLabelParsing() {
 		
 		
