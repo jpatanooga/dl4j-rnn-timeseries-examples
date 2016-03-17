@@ -136,8 +136,9 @@ so .dropout(0.5) with .regularization(true)
 		net.init();
 		net.setListeners(new ScoreIterationListener(1));
 
-		System.out.println( "Loading old parameters [test] >> " );
-		PhysioNetDataUtils.loadDL4JNetworkParameters( net, "/tmp/rnns/physionet/models/dl4j_model_run_2016-03-17_14_13_14/epoch_9_f1_0.7507/" );
+// DAVE: UNCOMMENT HERE AND REPLACE DIRS TO RESUME TRAINING...
+//		System.out.println( "Loading old parameters [test] >> " );
+//		PhysioNetDataUtils.loadDL4JNetworkParameters( net, "/tmp/rnns/physionet/models/dl4j_model_run_2016-03-17_14_13_14/epoch_9_f1_0.7507/" );
 		
 		//Print the  number of parameters in the network (and for each layer)
 		Layer[] layers = net.getLayers();
