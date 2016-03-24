@@ -268,6 +268,249 @@ public class PhysioNetDataUtils {
 		
 	}
 	
+	
+	public static void extractNFoldFromFullPhysioNet(String srcDirectory, String schemaPath, String dstBasePath) throws IOException {
+		
+		String physioNetBaseDirectory = srcDirectory; //"/tmp/set-a/";
+		String physioSchemaFilePath = schemaPath; //"src/test/resources/physionet_schema.txt";
+		String physioLabelsFilePath = "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt";
+		
+		String dstPathTrainDirectory = dstBasePath + "train/";
+		String dstPathTestDirectory = dstBasePath + "test/";
+		String dstPathValidateDirectory = dstBasePath + "validate/";
+		
+		int trainDatasetSize = 2800;
+		int testDatasetSize = 600;
+		int validateDatasetSize = 600;
+		
+		File[] listOfFiles_All = null;
+		
+		//File[] listOfFiles_Train = null;
+		//File[] listOfFiles_Validate = null;
+		//File[] listOfFiles_Test = null;
+		
+		Map<String, String> fileListHashMap = new LinkedHashMap<>();
+		
+		Map<String, String> hashMap_TrainFiles = new LinkedHashMap<>();
+		Map<String, String> hashMap_ValidateFiles = new LinkedHashMap<>();
+		Map<String, String> hashMap_TestFiles = new LinkedHashMap<>();
+		
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer( physioNetBaseDirectory, physioSchemaFilePath, physioLabelsFilePath );
+		vec.loadSchema();
+		vec.loadLabels();
+		//vec.setupFileInputList(false, 0);
+		vec.collectStatistics();
+		
+		
+		// total dataset size == Smaller Class x 2
+		
+		//int balancedMaxSize = vec.labels.diedLabelCount * 2;
+		
+		//int trainDatasetSize = balancedMaxSize - testDatasetSize;
+		
+		//System.out.println( "> Balanced Dataset Max Size: " + balancedMaxSize );
+		//System.out.println( "> Balanced [Train] Dataset Size: " + trainDatasetSize );
+		//System.out.println( "> Balanced [Test] Dataset Size: " + testDatasetSize );
+		//System.out.println( "> Balanced [Validate] Dataset Size: " + testDatasetSize );
+		
+		//Map<String, String> negativeClassFiles = new LinkedHashMap<>();
+		//Map<String, String> negativeClassFilesTest = new LinkedHashMap<>();
+		
+		// survived
+		//Map<String, String> positiveClassFiles = new LinkedHashMap<>();
+		//Map<String, String> positiveClassFilesTest = new LinkedHashMap<>();
+		
+		File folder = new File( physioNetBaseDirectory );
+		
+		if (!folder.exists()) {
+			System.out.println("File Does Not Exist.");
+			return;
+		}
+		
+		if (folder.isDirectory()) {
+			
+		} else {
+			System.out.println("This is a single file");
+		}
+
+		
+		listOfFiles_All = folder.listFiles();
+		
+		
+		for ( int x = 0; x < listOfFiles_All.length; x++ ) {
+			
+			//listOfFiles_All
+			fileListHashMap.put( listOfFiles_All[ x ].getName(), "" );
+			
+		//	System.out.println( listOfFiles_All[ x ].getName() );
+			
+		}
+		
+		
+		int counter = 0;
+		
+		while (fileListHashMap.size() > 0) {
+			
+			int randomIndex = (int )(Math.random() * fileListHashMap.size());
+			
+			List keys = new ArrayList(fileListHashMap.keySet());
+			//fileListHashMap.keySet()
+		//	System.out.println( "key " + randomIndex  + " == " + keys.get( randomIndex ) );
+			
+			String filename = (String) keys.get( randomIndex );
+			
+			fileListHashMap.remove( filename );
+			
+		//	System.out.println( counter + " remove: " + filename );
+			
+			if (validateDatasetSize > hashMap_ValidateFiles.size()) {
+				hashMap_ValidateFiles.put(filename, "");
+			} else if (testDatasetSize > hashMap_TestFiles.size()) {
+				hashMap_TestFiles.put(filename, "");
+			} else {
+
+			//if (trainDatasetSize > hashMap_TrainFiles.size()) {
+				hashMap_TrainFiles.put(filename, "");
+			}
+
+			counter++;
+		}
+		
+		System.out.println( "Validate List Size: " + hashMap_ValidateFiles.size() );
+		System.out.println( "Test List Size: " + hashMap_TestFiles.size() );
+		System.out.println( "Train List Size: " + hashMap_TrainFiles.size() );
+		
+		
+		
+		// NOW bleed off the test subset
+				
+		System.out.println( "Copy [Validate Set] Files To: " + dstPathValidateDirectory );
+		
+		int validateSurvived = 0;
+		int validateDied = 0;
+		
+		//int vali
+		for (int x = 0; x < validateDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_ValidateFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_ValidateFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				validateDied++;
+			} else {
+				validateSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathValidateDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Validate Survived: " + validateSurvived );
+		System.out.println( "Validate Died: " + validateDied );
+		
+		
+		
+		System.out.println( "Copy [Test Set] Files To: " + dstPathTestDirectory );
+		
+		int testSurvived = 0;
+		int testDied = 0;
+		
+		//int vali
+		for (int x = 0; x < testDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_TestFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_TestFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				testDied++;
+			} else {
+				testSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTestDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Test Set Survived: " + testSurvived );
+		System.out.println( "Test Set Died: " + testDied );		
+		
+		
+		
+		
+		System.out.println( "Copy [Train Set] Files To: " + dstPathTrainDirectory );
+		
+		int trainSurvived = 0;
+		int trainDied = 0;
+		
+		//int vali
+		for (int x = 0; x < trainDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_TrainFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_TrainFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				trainDied++;
+			} else {
+				trainSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTrainDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Train Set Survived: " + trainSurvived );
+		System.out.println( "Train Set Died: " + trainDied );				
+		
+		
+		
+		
+		
+		
+		
+		
+	}	
+	
+	
+	
 	public static String readFile(String path, Charset encoding) throws IOException {
 		
 	  byte[] encoded = Files.readAllBytes(Paths.get(path));

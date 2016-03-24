@@ -50,4 +50,14 @@ public class TestPhysioNetSubsetExtraction {
 		
 	}
 
+	
+	@Test
+	public void testExtractFoldsFillPhysioNet() throws IOException {
+		
+		
+		PhysioNetDataUtils.extractNFoldFromFullPhysioNet("/tmp/set-a/", "src/test/resources/physionet_schema_zmzuv_0.txt", "/tmp/set-a-full-splits-1/");
+		
+	}
+	
+	
 }
