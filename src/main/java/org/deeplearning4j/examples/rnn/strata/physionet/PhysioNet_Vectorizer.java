@@ -38,7 +38,7 @@ public class PhysioNet_Vectorizer {
 	public String srcDir = null;
 	public String srcDirAlternativeStatistics = null;
 	String currentPatientFile = null;
-	String columnDelimiter = ",";
+	protected String columnDelimiter = ",";
 	String schemaPath = "";
 	String labelFilePath = "";
 	
