@@ -52,6 +52,15 @@ public class TestPhysioNetSubsetExtraction {
 
 	
 	@Test
+	public void testExtract5Splits() throws IOException {
+		
+		
+		PhysioNetDataUtils.extractEvenSplitsFromFullPhysioNet( "/tmp/set-a/", "src/test/resources/physionet_schema_zmzuv_0.txt", "/tmp/set-a-5-splits-validate-1/");
+		
+	}
+	
+	
+	@Test
 	public void testExtractFoldsFillPhysioNet() throws IOException {
 		
 		

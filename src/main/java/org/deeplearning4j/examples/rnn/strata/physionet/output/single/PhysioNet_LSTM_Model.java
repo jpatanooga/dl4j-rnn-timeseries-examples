@@ -65,13 +65,13 @@ public class PhysioNet_LSTM_Model {
 		int miniBatchSize = 20;						//Size of mini batch to use when  training
 		//int totalExamplesToTrainWith = 1100;
 		
-		int trainingExamples = 20; // 2800;
-		int testExamples = 10; //600;
-		int validateExamples = 10; //600;
+		int trainingExamples = 200; // 2800;
+		int testExamples = 100; //600;
+		int validateExamples = 100; //600;
 		
 		double learningRate = 0.009;
 		
-		int numEpochs = 1;							//Total number of training + sample generation epochs
+		int numEpochs = 5;							//Total number of training + sample generation epochs
 		Random rng = new Random(12345);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH_mm_ss");
 		
@@ -119,7 +119,7 @@ so .dropout(0.5) with .regularization(true)
 					.updater(Updater.RMSPROP)
 					.activation("tanh").weightInit(WeightInit.DISTRIBUTION)
 					.dist(new UniformDistribution(-0.08, 0.08)).build())
-			.layer(2, new RnnOutputLayer.Builder(LossFunction.MCXENT).activation("sigmoid")        //MCXENT + softmax for classification
+			.layer(2, new RnnOutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD).activation("sigmoid")        //MCXENT + softmax for classification
 					.updater(Updater.RMSPROP)
 					.nIn(lstmLayerSize).nOut(nOut).weightInit(WeightInit.DISTRIBUTION)
 					.dist(new UniformDistribution(-0.08, 0.08)).build())
@@ -161,6 +161,8 @@ so .dropout(0.5) with .regularization(true)
             System.out.println( evaluation_validate.stats() );			
 			
 		}
+		
+		org.deeplearning4j.eval.Evaluation e = new Evaluation();
 		
 		
 		//Print the  number of parameters in the network (and for each layer)
@@ -233,12 +235,12 @@ so .dropout(0.5) with .regularization(true)
                 INDArray inMask = t.getFeaturesMaskArray();
                 INDArray outMask = t.getLabelsMaskArray();
                 INDArray predicted = net.output(features,false,inMask,outMask);
-                
+                /*
                 System.out.println("predicted: ");
                 System.out.println( predicted.getRow(0) );
                 System.out.println("label: ");
                 System.out.println( lables.getRow(0) );
-
+*/
                 evaluation_validate.evalTimeSeries(lables,predicted,outMask);
                 //evaluation_validate.ev
                 

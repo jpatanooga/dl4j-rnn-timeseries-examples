@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,8 +89,16 @@ public class PhysioNet_Vectorizer {
 			
 		//} else {
 		
-			File[] listOfFiles = folder.listFiles();
-			this.listOfFilesToVectorize = listOfFiles; // laziness
+			//File[] listOfFiles = folder.listFiles();
+		
+		File[] files = folder.listFiles(new FilenameFilter() {
+		    public boolean accept(File dir, String name) {
+		        return name.toLowerCase().endsWith(".txt");
+		    }
+		});
+		
+		
+			this.listOfFilesToVectorize = files; // laziness
 			
 			System.out.println("Vectorizer: ");
 			System.out.println("Vectorize Src Dir: " + this.srcDir );
@@ -116,9 +125,15 @@ public class PhysioNet_Vectorizer {
 			System.out.println("This is a single file");
 		}
 
+		//folder.lis
 		
+		File[] files = folder.listFiles(new FilenameFilter() {
+		    public boolean accept(File dir, String name) {
+		        return name.toLowerCase().endsWith(".txt");
+		    }
+		});
 		
-		this.listOfFilesToCollectStatistics = folder.listFiles();
+		this.listOfFilesToCollectStatistics = files;
 		
 		
 	}
@@ -354,6 +369,8 @@ public class PhysioNet_Vectorizer {
 	public void scanFileForStatistics(String filepath) {
 		
 		String csvLine = "";
+		
+		//System.out.println( filepath );
 		
 		try (BufferedReader br = new BufferedReader(new FileReader( filepath ) ) ) {
 		    

@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -508,6 +509,322 @@ public class PhysioNetDataUtils {
 		
 		
 	}	
+	
+	
+	
+	
+	
+	
+	public static void extractEvenSplitsFromFullPhysioNet(String srcDirectory, String schemaPath, String dstBasePath) throws IOException {
+		
+		String physioNetBaseDirectory = srcDirectory; //"/tmp/set-a/";
+		String physioSchemaFilePath = schemaPath; //"src/test/resources/physionet_schema.txt";
+		String physioLabelsFilePath = "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt";
+		
+		String dstPathTrainDirectory = dstBasePath + "train/";
+		String dstPathTestDirectory = dstBasePath + "test/";
+		String dstPathValidateDirectory = dstBasePath + "validate/";
+		
+		int totalRecords = 4000;
+		int splits = 5; // Note: this is hard set to get away w not dealing w odd size splits right now
+		
+		int splitSize = totalRecords / splits;
+		
+		int trainDatasetSize = 2800;
+		int testDatasetSize = 600;
+		int validateDatasetSize = 600;
+		
+		File[] listOfFiles_All = null;
+		
+		
+		Map<String, String> fileListHashMap = new LinkedHashMap<>();
+		
+		/*
+		Map<String, String> hashMap_TrainFiles = new LinkedHashMap<>();
+		Map<String, String> hashMap_ValidateFiles = new LinkedHashMap<>();
+		Map<String, String> hashMap_TestFiles = new LinkedHashMap<>();
+		*/
+		List< Map<String, String> > hashMap_Files_Splits = new ArrayList<>();
+		for ( int x = 0; x < splits; x++ ) {
+			
+			// file list map
+			Map<String, String> m = new LinkedHashMap<>();
+			hashMap_Files_Splits.add( m );
+			
+		}
+		
+		
+		PhysioNet_Vectorizer vec = new PhysioNet_Vectorizer( physioNetBaseDirectory, physioSchemaFilePath, physioLabelsFilePath );
+		vec.loadSchema();
+		vec.loadLabels();
+		vec.collectStatistics();
+		
+		
+
+		
+		File folder = new File( physioNetBaseDirectory );
+		
+		if (!folder.exists()) {
+			System.out.println("File Does Not Exist.");
+			return;
+		}
+		
+		if (folder.isDirectory()) {
+			
+		} else {
+			System.out.println("This is a single file");
+		}
+
+		
+		
+		File[] files = folder.listFiles(new FilenameFilter() {
+		    public boolean accept(File dir, String name) {
+		        return name.toLowerCase().endsWith(".txt");
+		    }
+		});
+		
+		listOfFiles_All = files;
+		
+		
+		for ( int x = 0; x < listOfFiles_All.length; x++ ) {
+			
+			//listOfFiles_All
+			fileListHashMap.put( listOfFiles_All[ x ].getName(), "" );
+			
+		//	System.out.println( listOfFiles_All[ x ].getName() );
+			
+		}
+		
+		
+		int counter = 0;
+		
+		while (fileListHashMap.size() > 0) {
+			
+			int randomIndex = (int )(Math.random() * fileListHashMap.size());
+			
+			List keys = new ArrayList(fileListHashMap.keySet());
+			//fileListHashMap.keySet()
+		//	System.out.println( "key " + randomIndex  + " == " + keys.get( randomIndex ) );
+			
+			String filename = (String) keys.get( randomIndex );
+			
+			fileListHashMap.remove( filename );
+			
+			int dstIndex = (counter % hashMap_Files_Splits.size());
+			
+			Map<String, String> splitMap = hashMap_Files_Splits.get( dstIndex );
+			splitMap.put(filename, "");
+			
+			//System.out.println( "> " +  (counter % hashMap_Files_Splits.size())  + " of " + hashMap_Files_Splits.size() );
+			
+		//	System.out.println( counter + " remove: " + filename );
+			/*
+			if (validateDatasetSize > hashMap_ValidateFiles.size()) {
+				hashMap_ValidateFiles.put(filename, "");
+			} else if (testDatasetSize > hashMap_TestFiles.size()) {
+				hashMap_TestFiles.put(filename, "");
+			} else {
+*/
+			//if (trainDatasetSize > hashMap_TrainFiles.size()) {
+	//			hashMap_TrainFiles.put(filename, "");
+			//}
+
+			counter++;
+		}
+		
+		for ( int x = 0; x < splits; x++ ) {
+			
+			// file list map
+			Map<String, String> splitMap = hashMap_Files_Splits.get( x );
+			System.out.println( "Split " + x + " > size:" + splitMap.size() );
+			
+		}
+
+		// now copy the split into the destination
+		
+		// dir target: /<target_base>/split_<x>/
+		
+		for ( int x = 0; x < splits; x++ ) {
+			
+			int survived = 0;
+			int died = 0;
+			
+			String dstBasePathDirectory = dstBasePath + "split_" + x + "/";
+			
+			System.out.println( "Processing: " + dstBasePathDirectory );
+			
+			Map<String, String> splitMap = hashMap_Files_Splits.get( x );
+			
+			for ( int fileIndex = 0; fileIndex < splitSize; fileIndex++ ) {
+			
+				String patientID = "";
+				String filename = "";
+				
+				Entry<String, String> posEntry = splitMap.entrySet().iterator().next();
+				filename = posEntry.getKey(); 
+				splitMap.remove(filename);
+				
+				String[] filenameParts = filename.split(".t");
+				patientID = filenameParts[ 0 ];
+				
+				if (vec.labels.translateLabelEntry(patientID) == 0) {
+					died++;
+				} else {
+					survived++;
+				}
+							
+				// just copy now
+				String path = vec.srcDir + filename;// + ".txt";
+				
+			//	System.out.println( x + "" + path);
+				
+				FileUtils.copyFile( new File( path ), new File(dstBasePathDirectory + filename ) );
+				
+				
+			}
+			
+			System.out.println( "Split Survived: " + survived );
+			System.out.println( "Split Died: " + died );
+			
+		
+		}
+
+		
+	/*
+		System.out.println( "Validate List Size: " + hashMap_ValidateFiles.size() );
+		System.out.println( "Test List Size: " + hashMap_TestFiles.size() );
+		System.out.println( "Train List Size: " + hashMap_TrainFiles.size() );
+		
+		
+		
+		// NOW bleed off the test subset
+				
+		System.out.println( "Copy [Validate Set] Files To: " + dstPathValidateDirectory );
+		
+		int validateSurvived = 0;
+		int validateDied = 0;
+		
+		//int vali
+		for (int x = 0; x < validateDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_ValidateFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_ValidateFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				validateDied++;
+			} else {
+				validateSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathValidateDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Validate Survived: " + validateSurvived );
+		System.out.println( "Validate Died: " + validateDied );
+		
+		
+		
+		System.out.println( "Copy [Test Set] Files To: " + dstPathTestDirectory );
+		
+		int testSurvived = 0;
+		int testDied = 0;
+		
+		//int vali
+		for (int x = 0; x < testDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_TestFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_TestFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				testDied++;
+			} else {
+				testSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTestDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Test Set Survived: " + testSurvived );
+		System.out.println( "Test Set Died: " + testDied );		
+		
+		
+		
+		
+		System.out.println( "Copy [Train Set] Files To: " + dstPathTrainDirectory );
+		
+		int trainSurvived = 0;
+		int trainDied = 0;
+		
+		//int vali
+		for (int x = 0; x < trainDatasetSize; x++ ) {
+			
+			String patientID = "";
+			String filename = "";
+			
+			Entry<String, String> posEntry = hashMap_TrainFiles.entrySet().iterator().next();
+			filename = posEntry.getKey(); 
+			hashMap_TrainFiles.remove(filename);
+			
+			String[] filenameParts = filename.split(".t");
+			patientID = filenameParts[ 0 ];
+			
+			if (vec.labels.translateLabelEntry(patientID) == 0) {
+				trainDied++;
+			} else {
+				trainSurvived++;
+			}
+						
+			// just copy now
+			String path = vec.srcDir + filename;// + ".txt";
+			
+		//	System.out.println( x + "" + path);
+			
+			FileUtils.copyFile( new File( path ), new File(dstPathTrainDirectory + filename ) );
+			
+			
+		}
+		
+		System.out.println( "Train Set Survived: " + trainSurvived );
+		System.out.println( "Train Set Died: " + trainDied );				
+		
+		
+		
+		*/
+		
+		
+		
+		
+	}		
+	
+	
 	
 	
 	

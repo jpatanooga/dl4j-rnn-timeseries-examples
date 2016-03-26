@@ -140,7 +140,13 @@ so .dropout(0.5) with .regularization(true)
                 INDArray inMask = t.getFeaturesMaskArray();
                 INDArray outMask = t.getLabelsMaskArray();
                 INDArray predicted = net.output(features,false,inMask,outMask);
-
+/*
+                System.out.println("predicted: ");
+                System.out.println( predicted.getRow(0) );
+                System.out.println("label: ");
+                System.out.println( lables.getRow(0) );
+  */              
+                
                 evaluation_final_test.evalTimeSeries(lables,predicted,outMask);
                 
             }
