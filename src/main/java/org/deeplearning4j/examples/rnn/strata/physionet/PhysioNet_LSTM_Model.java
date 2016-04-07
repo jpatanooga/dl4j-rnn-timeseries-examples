@@ -74,7 +74,7 @@ public class PhysioNet_LSTM_Model {
 		
 		double learningRate = 0.009;
 		
-		int numEpochs = 20;							//Total number of training + sample generation epochs
+		int numEpochs = 10;							//Total number of training + sample generation epochs
 		Random rng = new Random(12345);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH_mm_ss");
 		
@@ -82,15 +82,15 @@ public class PhysioNet_LSTM_Model {
 		
 		//PhysioNet_ICU_Mortality_Iterator iter = getPhysioNetIterator( miniBatchSize, totalExamplesToTrainWith );
 		
-		PhysioNet_ICU_Mortality_Iterator iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/runs/run_0/train/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, trainingExamples);
+		PhysioNet_ICU_Mortality_Iterator iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/runs/run_4/train/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, trainingExamples);
 		
 		
-		PhysioNet_ICU_Mortality_Iterator iter_validate = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/split_3/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", validateExamples, validateExamples);
+		PhysioNet_ICU_Mortality_Iterator iter_validate = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/split_2/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", validateExamples, validateExamples);
 		
 	//	PhysioNet_ICU_Mortality_Iterator test_iter = getPhysioNetIterator( miniBatchSize, 100 );
 		
 		//PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-balanced-5/test/", "src/test/resources/physionet_schema.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", miniBatchSize, 20);
-		PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/split_4/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", testExamples, testExamples);
+		PhysioNet_ICU_Mortality_Iterator test_iter = new PhysioNet_ICU_Mortality_Iterator( "/tmp/set-a-5-splits-validate-1/split_3/", "src/test/resources/physionet_schema_zmzuv_0.txt", "src/test/resources/data/physionet/sample/set-a-labels/Outcomes-a.txt", testExamples, testExamples);
 		
 		iter.reset();
 		test_iter.reset();

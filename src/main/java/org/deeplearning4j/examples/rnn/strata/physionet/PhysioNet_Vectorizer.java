@@ -977,14 +977,23 @@ public class PhysioNet_Vectorizer {
 		
 		int adjustedTimeStepIndex = timeStepIndex - 1;
 		
-	//	System.out.println( "timeStepIndex: " + timeStepIndex + ", adjustedTimeStepIndex: " + adjustedTimeStepIndex );
 		
+		
+		
+		try {
 		// TODO: temp timestep for now, FIX THIS
 		int[] label_params = new int[]{ miniBatchIndex, labelPositiveColumnIndex, adjustedTimeStepIndex };
 		dstLabels.putScalar( label_params, 1 );
 		
 		dstLabelsMask.putScalar( new int[]{ miniBatchIndex, adjustedTimeStepIndex }, 1 );
 		
+		} catch (IllegalArgumentException e) {
+		
+			System.err.println( "\n\nBad file: " + filepath );
+			System.err.println( "\nMinibatchIndex: " + miniBatchIndex + "timeStepIndex: " + timeStepIndex + ", adjustedTimeStepIndex: " + adjustedTimeStepIndex + " Map Size: " + timestampTreeMap.entrySet().size() + "\n\n" );
+		
+			
+		}
 		
 	}
 	
